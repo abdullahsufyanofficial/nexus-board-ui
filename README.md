@@ -1,73 +1,216 @@
-# Welcome to your Lovable project
+# 🚀 ProjectFlow - Modern Project Management SaaS
 
-## Project info
+A beautiful, production-ready project management application built with React, TypeScript, and modern web technologies.
 
-**URL**: https://lovable.dev/projects/8ced432d-3800-43f1-b4ee-6c169344d2fd
+## ✨ Features
 
-## How can I edit this code?
+### 🔐 Authentication & Security
+- Login/Register with form validation
+- Protected routes with role-based access
+- Mock JWT authentication (easily replaceable)
+- Password strength validation
 
-There are several ways of editing your application.
+### 📊 Dashboard & Analytics  
+- Beautiful KPI cards (Active Projects, Tasks, Team Utilization)
+- Interactive charts (Line, Pie, Bar charts with Recharts)
+- Recent activity feed
+- Project progress tracking
 
-**Use Lovable**
+### 📁 Project Management
+- Full CRUD operations for projects
+- Grid and list view modes
+- Advanced filtering and search
+- Project detail pages with tabbed interface
+- Progress tracking and team assignment
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/8ced432d-3800-43f1-b4ee-6c169344d2fd) and start prompting.
+### 📋 Kanban Board
+- Drag-and-drop task management with @dnd-kit
+- Four-column workflow (To Do, In Progress, Review, Done)
+- Real-time task updates
+- Priority and assignee management
 
-Changes made via Lovable will be committed automatically to this repo.
+### 👥 Team Collaboration
+- User management with roles (Admin, Manager, Member)
+- Team assignment to projects
+- Avatar display and user profiles
 
-**Use your preferred IDE**
+## 🛠 Tech Stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Frontend Framework
+- **React 18** - Modern React with hooks
+- **TypeScript** - Type-safe development
+- **Vite** - Fast build tool and dev server
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### State Management
+- **Redux Toolkit** - Predictable state container
+- **React Query** - Server state management
+- **Axios** - HTTP client with interceptors
 
-Follow these steps:
+### UI & Styling
+- **Tailwind CSS** - Utility-first CSS framework
+- **Shadcn/ui** - Beautiful component library
+- **Framer Motion** - Smooth animations
+- **Lucide React** - Beautiful icon set
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Forms & Validation
+- **React Hook Form** - Performant forms
+- **Yup** - Schema validation
+- **React Hot Toast** - Toast notifications
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Charts & Visualization
+- **Recharts** - Composable charting library
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Drag & Drop
+- **@dnd-kit** - Modern drag and drop
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+## 🚀 Quick Start
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
 
-**Edit a file directly in GitHub**
+## 🔧 Environment Setup
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Create a `.env` file:
 
-**Use GitHub Codespaces**
+```env
+# API Configuration
+VITE_API_BASE_URL=http://localhost:3001/api
+VITE_MOCK_MODE=true
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 📡 API Integration
 
-## What technologies are used for this project?
+### Mock Mode (Default)
+The app runs with mock data by default. All API calls are simulated with realistic delays.
 
-This project is built with:
+### Real Backend Integration
+To connect a real backend:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1. Set `VITE_MOCK_MODE=false` in your `.env` 
+2. Update `VITE_API_BASE_URL` to your API endpoint
+3. Replace mock functions in `/src/store/slices/` with real API calls
 
-## How can I deploy this project?
+### API Contract
 
-Simply open [Lovable](https://lovable.dev/projects/8ced432d-3800-43f1-b4ee-6c169344d2fd) and click on Share -> Publish.
+All endpoints and data shapes are documented in `/src/types/index.ts`. Key endpoints:
 
-## Can I connect a custom domain to my Lovable project?
+```typescript
+// Authentication
+POST /api/auth/login
+POST /api/auth/register
+GET /api/auth/me
 
-Yes, you can!
+// Projects
+GET /api/projects
+GET /api/projects/:id
+POST /api/projects
+PUT /api/projects/:id
+DELETE /api/projects/:id
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+// Tasks
+GET /api/projects/:projectId/tasks
+POST /api/projects/:projectId/tasks
+PUT /api/tasks/:taskId
+DELETE /api/tasks/:taskId
+```
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## 🎨 Design System
+
+### Colors
+- **Primary**: Indigo (#6366F1) - Modern and professional
+- **Success**: Emerald (#10B981) - For completed states
+- **Warning**: Amber (#F59E0B) - For attention items
+- **Destructive**: Red (#EF4444) - For errors and urgent items
+
+### Typography
+- Clean sans-serif font stack
+- Proper heading hierarchy
+- Consistent spacing and sizing
+
+### Components
+- Custom variants for all UI components
+- Responsive design (mobile, tablet, desktop)
+- Dark mode support (via CSS variables)
+
+## 📱 Responsive Design
+
+- **Mobile First**: Optimized for mobile devices
+- **Collapsible Sidebar**: Auto-collapse on smaller screens  
+- **Touch Friendly**: Proper touch targets and gestures
+- **Responsive Charts**: Charts adapt to screen size
+
+## 🔒 Security Features
+
+- **XSS Protection**: Proper input sanitization
+- **CSRF Protection**: Token-based authentication
+- **Role-Based Access**: Admin, Manager, Member roles
+- **Secure Storage**: JWT tokens in localStorage (configurable)
+
+## 🧪 Testing
+
+Testing setup ready with:
+- **Vitest** - Fast unit test runner
+- **React Testing Library** - Component testing utilities
+
+```bash
+npm run test
+```
+
+## 🚀 Deployment
+
+### Build
+```bash
+npm run build
+```
+
+### Deploy to Vercel/Netlify
+The `dist/` folder contains production-ready static files.
+
+## 📂 Project Structure
+
+```
+src/
+├── components/          # Reusable UI components
+│   ├── auth/           # Authentication components
+│   ├── board/          # Kanban board components  
+│   ├── layouts/        # Page layouts
+│   ├── navigation/     # Navigation components
+│   └── ui/             # Shadcn UI components
+├── data/               # Mock data files
+├── hooks/              # Custom React hooks
+├── pages/              # Page components
+├── store/              # Redux store & slices
+├── types/              # TypeScript type definitions
+└── api/                # API client configuration
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+**Built with ❤️ using modern web technologies**
+
+Demo Credentials:
+- Email: Any valid email
+- Password: Any password (min 6 characters)
