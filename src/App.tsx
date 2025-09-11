@@ -18,6 +18,13 @@ import Dashboard from "./pages/Dashboard";
 import ProjectsPage from "./pages/ProjectsPage";
 import ProjectDetailPage from "./pages/ProjectDetailPage";
 import BoardPage from "./pages/BoardPage";
+import TasksPage from "./pages/TasksPage";
+import TeamsPage from "./pages/TeamsPage";
+import CalendarPage from "./pages/CalendarPage";
+import ReportsPage from "./pages/ReportsPage";
+import ProfilePage from "./pages/ProfilePage";
+import SettingsPage from "./pages/SettingsPage";
+import BillingPage from "./pages/BillingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -48,6 +55,13 @@ const App = () => (
               <Route path="projects" element={<ProjectsPage />} />
               <Route path="projects/:projectId" element={<ProjectDetailPage />} />
               <Route path="projects/:projectId/board" element={<BoardPage />} />
+              <Route path="tasks" element={<TasksPage />} />
+              <Route path="teams" element={<TeamsPage />} />
+              <Route path="calendar" element={<CalendarPage />} />
+              <Route path="reports" element={<ReportsPage />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="settings" element={<SettingsPage />} />
+              <Route path="billing" element={<BillingPage />} />
             </Route>
 
             {/* Catch-all */}
