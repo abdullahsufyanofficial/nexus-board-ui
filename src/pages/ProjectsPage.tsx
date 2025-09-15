@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Plus, Search, Filter, Grid, List, FolderOpen } from 'lucide-react';
 
@@ -17,21 +17,74 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 import { RootState } from '../store';
-import { fetchProjects } from '../store/slices/projectsSlice';
+import { fetchProjects, createProject } from '../store/slices/projectsSlice';
 import { Project } from '../types';
 
 const ProjectsPage = () => {
   const dispatch = useDispatch();
   const { projects, isLoading } = useSelector((state: RootState) => state.projects);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [newProject, setNewProject] = useState({
+    name: '',
+    description: '',
+    status: 'active' as Project['status'],
+    visibility: 'private' as Project['visibility'],
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: '',
+  });
 
   useEffect(() => {
     dispatch(fetchProjects() as any);
   }, [dispatch]);
+
+  useEffect(() => {
+    if (searchParams.get('new') === 'true') {
+      setIsCreateDialogOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const handleCreateProject = async () => {
+    if (!newProject.name.trim()) return;
+    
+    try {
+      await dispatch(createProject({
+        ...newProject,
+        members: [],
+        tags: [],
+        progress: 0,
+        createdBy: 'user-1', // TODO: Get from auth state
+      }) as any);
+      
+      setIsCreateDialogOpen(false);
+      setNewProject({
+        name: '',
+        description: '',
+        status: 'active',
+        visibility: 'private',
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: '',
+      });
+    } catch (error) {
+      console.error('Failed to create project:', error);
+    }
+  };
 
   const filteredProjects = projects.filter((project) => {
     const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -79,7 +132,7 @@ const ProjectsPage = () => {
             Manage and track all your projects in one place
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           New Project
         </Button>
@@ -155,7 +208,7 @@ const ProjectsPage = () => {
               }
             </p>
             {!searchQuery && statusFilter === 'all' && (
-              <Button className="mt-4">
+              <Button className="mt-4" onClick={() => setIsCreateDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Project
               </Button>
@@ -307,6 +360,100 @@ const ProjectsPage = () => {
           </div>
         )}
       </motion.div>
+
+      {/* Create Project Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Create New Project</DialogTitle>
+            <DialogDescription>
+              Add a new project to start organizing your work.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Project Name</Label>
+              <Input
+                id="name"
+                placeholder="Enter project name"
+                value={newProject.name}
+                onChange={(e) => setNewProject(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                placeholder="Enter project description"
+                value={newProject.description}
+                onChange={(e) => setNewProject(prev => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="status">Status</Label>
+                <Select 
+                  value={newProject.status} 
+                  onValueChange={(value) => setNewProject(prev => ({ ...prev, status: value as Project['status'] }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="paused">Paused</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="archived">Archived</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="visibility">Visibility</Label>
+                <Select 
+                  value={newProject.visibility} 
+                  onValueChange={(value) => setNewProject(prev => ({ ...prev, visibility: value as Project['visibility'] }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="private">Private</SelectItem>
+                    <SelectItem value="public">Public</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="startDate">Start Date</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={newProject.startDate}
+                  onChange={(e) => setNewProject(prev => ({ ...prev, startDate: e.target.value }))}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="endDate">End Date</Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={newProject.endDate}
+                  onChange={(e) => setNewProject(prev => ({ ...prev, endDate: e.target.value }))}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateProject} disabled={!newProject.name.trim()}>
+              Create Project
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
