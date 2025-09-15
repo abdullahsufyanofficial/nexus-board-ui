@@ -45,7 +45,7 @@ const TasksPage = () => {
   });
 
   useEffect(() => {
-    dispatch(fetchTasks());
+    dispatch(fetchTasks(undefined));
     dispatch(fetchProjects());
   }, [dispatch]);
 
@@ -71,8 +71,9 @@ const TasksPage = () => {
     try {
       await dispatch(createTask({
         ...newTask,
-        assignees: user ? [{ id: user.id, name: user.name, email: user.email, avatar: user.avatar }] : [],
+        assignees: user ? [{ id: user.id, name: user.name, email: user.email, avatar: user.avatar, role: user.role }] : [],
         attachments: [],
+        createdBy: user?.id || '',
       })).unwrap();
 
       toast({

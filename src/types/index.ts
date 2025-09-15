@@ -57,13 +57,16 @@ export interface Project {
 }
 
 // Task Types
+export type TaskStatus = 'todo' | 'in-progress' | 'review' | 'done';
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+
 export interface Task {
   id: string;
   projectId: string;
   title: string;
   description?: string;
-  status: 'todo' | 'in-progress' | 'review' | 'done';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
+  status: TaskStatus;
+  priority: TaskPriority;
   assignees: UserSummary[];
   dueDate?: string;
   tags: string[];

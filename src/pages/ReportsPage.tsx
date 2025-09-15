@@ -221,7 +221,7 @@ const ReportsPage = () => {
                   innerRadius={60}
                   outerRadius={100}
                   dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, value, payload }: any) => `${name} ${((value / taskStatusData.reduce((a, b) => a + b.value, 0)) * 100).toFixed(0)}%`}
                 >
                   {taskStatusData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />

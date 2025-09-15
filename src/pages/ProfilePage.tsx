@@ -41,11 +41,11 @@ const ProfilePage = () => {
 
   const handleSave = async () => {
     try {
-      await dispatch(updateUser({
+      dispatch(updateUser({
         ...user,
         name: formData.name,
         email: formData.email,
-      })).unwrap();
+      }));
 
       toast({
         title: "Success",

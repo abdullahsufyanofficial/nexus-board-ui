@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { 
@@ -65,15 +66,43 @@ const Dashboard = () => {
   const { projects } = useSelector((state: RootState) => state.projects);
   const { tasks } = useSelector((state: RootState) => state.tasks);
   const { user } = useSelector((state: RootState) => state.auth);
+  const [timePeriod, setTimePeriod] = useState<'today' | 'week' | 'month'>('today');
 
   useEffect(() => {
     dispatch(fetchProjects() as any);
     dispatch(fetchTasks('') as any);
   }, [dispatch]);
 
+  // Filter data based on time period
+  const getFilteredTasks = () => {
+    const now = new Date();
+    let startDate: Date;
+    
+    switch (timePeriod) {
+      case 'today':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        break;
+      case 'week':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }
+    
+    return tasks.filter(task => {
+      const taskDate = new Date(task.createdAt);
+      return taskDate >= startDate && taskDate <= now;
+    });
+  };
+
+  const filteredTasks = getFilteredTasks();
+
   const activeProjects = projects.filter(p => p.status === 'active').length;
-  const openTasks = tasks.filter(task => task.status !== 'done').length;
-  const overdueTasks = tasks.filter(task => 
+  const openTasks = filteredTasks.filter(task => task.status !== 'done').length;
+  const overdueTasks = filteredTasks.filter(task => 
     task.dueDate && 
     new Date(task.dueDate) < new Date() && 
     task.status !== 'done'
@@ -101,9 +130,18 @@ const Dashboard = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline">
+            <Button 
+              variant={timePeriod === 'week' ? 'default' : 'outline'}
+              onClick={() => setTimePeriod('week')}
+            >
               <Calendar className="mr-2 h-4 w-4" />
               This Week
+            </Button>
+            <Button 
+              variant={timePeriod === 'today' ? 'default' : 'outline'}
+              onClick={() => setTimePeriod('today')}
+            >
+              Today
             </Button>
             <Button>
               <TrendingUp className="mr-2 h-4 w-4" />

@@ -1,5 +1,6 @@
 import { Search, Bell, Plus } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { RootState } from "../../store";
 import { logoutUser } from "../../store/slices/authSlice";
 import { Button } from "@/components/ui/button";
@@ -19,9 +20,18 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 export function TopNavbar() {
   const user = useSelector((state: RootState) => state.auth.user);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     dispatch(logoutUser() as any);
+  };
+
+  const handleNewProject = () => {
+    navigate('/projects?new=true');
+  };
+
+  const handleProfileClick = () => {
+    navigate('/profile');
   };
 
   const getInitials = (name: string) => {
@@ -49,7 +59,7 @@ export function TopNavbar() {
 
       <div className="flex items-center gap-4">
         {/* Quick Actions */}
-        <Button size="sm" className="gap-2">
+        <Button size="sm" className="gap-2" onClick={handleNewProject}>
           <Plus className="h-4 w-4" />
           New Project
         </Button>
@@ -87,7 +97,7 @@ export function TopNavbar() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleProfileClick}>Profile</DropdownMenuItem>
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuItem>Team</DropdownMenuItem>
             <DropdownMenuSeparator />
