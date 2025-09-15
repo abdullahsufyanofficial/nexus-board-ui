@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Plus, Users, Mail, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { Plus, Users, Mail, MoreHorizontal, Edit, Trash2, Eye, X } from 'lucide-react';
 
 import { RootState, AppDispatch } from '@/store';
 import { fetchTeams, createTeam, updateTeam, deleteTeam } from '@/store/slices/teamsSlice';
@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Team } from '@/types';
+import { Team, UserSummary } from '@/types';
 
 const TeamsPage = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -26,6 +26,9 @@ const TeamsPage = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [deletingTeam, setDeletingTeam] = useState<Team | null>(null);
+  const [viewingTeam, setViewingTeam] = useState<Team | null>(null);
+  const [invitingToTeam, setInvitingToTeam] = useState<Team | null>(null);
+  const [inviteEmail, setInviteEmail] = useState('');
 
   const [newTeam, setNewTeam] = useState({
     name: '',
@@ -101,6 +104,76 @@ const TeamsPage = () => {
       toast({
         title: "Error",
         description: "Failed to delete team",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleInviteMember = async () => {
+    if (!invitingToTeam || !inviteEmail.trim()) {
+      toast({
+        title: "Error",
+        description: "Email address is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Mock invite functionality - in real app, this would send an API request
+    const newMember: UserSummary = {
+      id: `invited-${Date.now()}`,
+      name: inviteEmail.split('@')[0],
+      email: inviteEmail,
+      role: 'member',
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${inviteEmail}`,
+    };
+
+    try {
+      const updatedTeam = {
+        ...invitingToTeam,
+        members: [...invitingToTeam.members, newMember],
+      };
+      
+      await dispatch(updateTeam(updatedTeam)).unwrap();
+      
+      toast({
+        title: "Success",
+        description: `Invitation sent to ${inviteEmail}`,
+      });
+      
+      setInvitingToTeam(null);
+      setInviteEmail('');
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to invite member",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRemoveMember = async (team: Team, memberId: string) => {
+    try {
+      const updatedTeam = {
+        ...team,
+        members: team.members.filter(m => m.id !== memberId),
+      };
+      
+      await dispatch(updateTeam(updatedTeam)).unwrap();
+      
+      toast({
+        title: "Success",
+        description: "Member removed successfully",
+      });
+      
+      // Update viewing team if it's the same team
+      if (viewingTeam?.id === team.id) {
+        setViewingTeam(updatedTeam);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to remove member",
         variant: "destructive",
       });
     }
@@ -233,11 +306,23 @@ const TeamsPage = () => {
                 </div>
                 
                 <div className="mt-4 flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => setInvitingToTeam(team)}
+                  >
                     <Mail className="mr-2 h-4 w-4" />
                     Invite
                   </Button>
-                  <Button variant="outline" size="sm">View</Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setViewingTeam(team)}
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    View
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -276,6 +361,137 @@ const TeamsPage = () => {
                 Cancel
               </Button>
               <Button onClick={handleUpdateTeam}>Update Team</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* View Team Dialog */}
+      {viewingTeam && (
+        <Dialog open={!!viewingTeam} onOpenChange={() => setViewingTeam(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                {viewingTeam.name}
+              </DialogTitle>
+              <DialogDescription>
+                {viewingTeam.description || 'No description provided'}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold mb-3">Team Members ({viewingTeam.members.length})</h4>
+                {viewingTeam.members.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>No members in this team yet</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-2"
+                      onClick={() => {
+                        setViewingTeam(null);
+                        setInvitingToTeam(viewingTeam);
+                      }}
+                    >
+                      <Mail className="mr-2 h-4 w-4" />
+                      Invite Members
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {viewingTeam.members.map((member) => (
+                      <div key={member.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={member.avatar} />
+                            <AvatarFallback>
+                              {member.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">{member.name}</p>
+                            <p className="text-sm text-muted-foreground">{member.email}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                            {member.role}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveMember(viewingTeam, member.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex justify-between pt-4">
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  setViewingTeam(null);
+                  setInvitingToTeam(viewingTeam);
+                }}
+              >
+                <Mail className="mr-2 h-4 w-4" />
+                Invite Members
+              </Button>
+              <Button variant="outline" onClick={() => setViewingTeam(null)}>
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Invite Member Dialog */}
+      {invitingToTeam && (
+        <Dialog open={!!invitingToTeam} onOpenChange={() => setInvitingToTeam(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Invite Member to {invitingToTeam.name}</DialogTitle>
+              <DialogDescription>
+                Send an invitation to join this team.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="invite-email">Email Address *</Label>
+                <Input
+                  id="invite-email"
+                  type="email"
+                  placeholder="Enter email address"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setInvitingToTeam(null);
+                  setInviteEmail('');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleInviteMember} disabled={!inviteEmail.trim()}>
+                Send Invitation
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
