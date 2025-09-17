@@ -99,10 +99,12 @@ const ProjectDetailPage = () => {
                 View Board
               </Button>
             </Link>
-            <Button>
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
-            </Button>
+            <Link to={`/projects/${projectId}/settings`}>
+              <Button>
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </Button>
+            </Link>
           </div>
         </div>
 

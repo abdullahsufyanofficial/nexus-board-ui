@@ -11,9 +11,10 @@ interface TaskCardProps {
   task: Task;
   getPriorityColor: (priority: Task['priority']) => string;
   isDragging?: boolean;
+  onClick?: () => void;
 }
 
-const TaskCard = ({ task, getPriorityColor, isDragging = false }: TaskCardProps) => {
+const TaskCard = ({ task, getPriorityColor, isDragging = false, onClick }: TaskCardProps) => {
   const {
     attributes,
     listeners,
@@ -29,7 +30,10 @@ const TaskCard = ({ task, getPriorityColor, isDragging = false }: TaskCardProps)
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <Card className={`cursor-pointer hover:shadow-md transition-all ${isDragging ? 'opacity-50' : ''}`}>
+      <Card 
+        className={`cursor-pointer hover:shadow-md transition-all ${isDragging ? 'opacity-50' : ''}`}
+        onClick={onClick}
+      >
         <CardContent className="p-4">
           <div className="space-y-3">
             <div className="flex items-start justify-between">

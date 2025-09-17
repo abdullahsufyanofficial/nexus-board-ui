@@ -17,6 +17,7 @@ import RegisterPage from "./pages/auth/RegisterPage";
 import Dashboard from "./pages/Dashboard";
 import ProjectsPage from "./pages/ProjectsPage";
 import ProjectDetailPage from "./pages/ProjectDetailPage";
+import ProjectSettingsPage from "./pages/ProjectSettingsPage";
 import BoardPage from "./pages/BoardPage";
 import TasksPage from "./pages/TasksPage";
 import TeamsPage from "./pages/TeamsPage";
@@ -52,9 +53,10 @@ const App = () => (
             {/* Protected Routes */}
             <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
-              <Route path="projects" element={<ProjectsPage />} />
-              <Route path="projects/:projectId" element={<ProjectDetailPage />} />
-              <Route path="projects/:projectId/board" element={<BoardPage />} />
+                <Route path="projects" element={<ProjectsPage />} />
+                <Route path="projects/:projectId" element={<ProjectDetailPage />} />
+                <Route path="projects/:projectId/settings" element={<ProjectSettingsPage />} />
+                <Route path="projects/:projectId/board" element={<BoardPage />} />
               <Route path="tasks" element={<TasksPage />} />
               <Route path="teams" element={<TeamsPage />} />
               <Route path="calendar" element={<CalendarPage />} />

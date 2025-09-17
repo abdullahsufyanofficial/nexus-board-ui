@@ -24,6 +24,9 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import TaskCard from '../components/board/TaskCard';
 import TaskColumn from '../components/board/TaskColumn';
+import TaskDialog from '../components/dialogs/TaskDialog';
+import TaskDetailsDialog from '../components/dialogs/TaskDetailsDialog';
+import FilterDialog, { FilterOptions } from '../components/dialogs/FilterDialog';
 
 import { RootState } from '../store';
 import { fetchProjectById } from '../store/slices/projectsSlice';
@@ -44,6 +47,18 @@ const BoardPage = () => {
   const { tasks, isLoading } = useSelector((state: RootState) => state.tasks);
   
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [showTaskDialog, setShowTaskDialog] = useState(false);
+  const [showTaskDetails, setShowTaskDetails] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [newTaskStatus, setNewTaskStatus] = useState<Task['status']>('todo');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<FilterOptions>({
+    status: [],
+    priority: [],
+    assignees: [],
+    tags: [],
+    dueDateRange: 'all'
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -66,8 +81,61 @@ const BoardPage = () => {
 
   const projectTasks = tasks.filter(task => task.projectId === projectId);
 
+  // Apply filters
+  const filteredTasks = projectTasks.filter(task => {
+    // Status filter
+    if (filters.status.length > 0 && !filters.status.includes(task.status)) {
+      return false;
+    }
+    
+    // Priority filter
+    if (filters.priority.length > 0 && !filters.priority.includes(task.priority)) {
+      return false;
+    }
+    
+    // Assignee filter
+    if (filters.assignees.length > 0 && !task.assignees.some(a => filters.assignees.includes(a.id))) {
+      return false;
+    }
+    
+    // Tag filter
+    if (filters.tags.length > 0 && !task.tags.some(t => filters.tags.includes(t))) {
+      return false;
+    }
+    
+    // Due date filter
+    if (filters.dueDateRange !== 'all' && task.dueDate) {
+      const dueDate = new Date(task.dueDate);
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      switch (filters.dueDateRange) {
+        case 'overdue':
+          if (dueDate >= today && task.status !== 'done') return false;
+          break;
+        case 'today':
+          const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+          if (dueDate < today || dueDate >= tomorrow) return false;
+          break;
+        case 'week':
+          const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+          if (dueDate < today || dueDate >= weekFromNow) return false;
+          break;
+        case 'month':
+          const monthFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+          if (dueDate < today || dueDate >= monthFromNow) return false;
+          break;
+      }
+    }
+    
+    return true;
+  });
+
+  // Get unique tags for filter options
+  const availableTags = Array.from(new Set(projectTasks.flatMap(task => task.tags)));
+
   const getTasksByStatus = (status: Task['status']) => {
-    return projectTasks.filter(task => task.status === status);
+    return filteredTasks.filter(task => task.status === status);
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -86,7 +154,7 @@ const BoardPage = () => {
     const taskId = active.id as string;
     const newStatus = over.id as Task['status'];
     
-    const task = projectTasks.find(t => t.id === taskId);
+    const task = filteredTasks.find(t => t.id === taskId);
     if (!task || task.status === newStatus) return;
 
     // Optimistic update
@@ -94,6 +162,16 @@ const BoardPage = () => {
     
     // Update on server
     dispatch(updateTaskStatus({ taskId, status: newStatus }) as any);
+  };
+
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task);
+    setShowTaskDetails(true);
+  };
+
+  const handleAddTask = (status?: Task['status']) => {
+    setNewTaskStatus(status || 'todo');
+    setShowTaskDialog(true);
   };
 
   const getPriorityColor = (priority: Task['priority']) => {
@@ -145,15 +223,20 @@ const BoardPage = () => {
           </div>
           
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setShowFilters(true)}>
               <Filter className="mr-2 h-4 w-4" />
               Filter
+              {(filters.status.length + filters.priority.length + filters.assignees.length + filters.tags.length + (filters.dueDateRange !== 'all' ? 1 : 0)) > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {filters.status.length + filters.priority.length + filters.assignees.length + filters.tags.length + (filters.dueDateRange !== 'all' ? 1 : 0)}
+                </Badge>
+              )}
             </Button>
             <Button variant="outline" size="sm">
               <Users className="mr-2 h-4 w-4" />
               Assignees
             </Button>
-            <Button>
+            <Button onClick={() => handleAddTask()}>
               <Plus className="mr-2 h-4 w-4" />
               Add Task
             </Button>
@@ -202,6 +285,7 @@ const BoardPage = () => {
                   title={column.title}
                   count={columnTasks.length}
                   color={column.color}
+                  onAddTask={() => handleAddTask(column.id)}
                 >
                   <SortableContext
                     items={columnTasks.map(task => task.id)}
@@ -213,6 +297,7 @@ const BoardPage = () => {
                           key={task.id}
                           task={task}
                           getPriorityColor={getPriorityColor}
+                          onClick={() => handleTaskClick(task)}
                         />
                       ))}
                     </div>
@@ -233,6 +318,27 @@ const BoardPage = () => {
           </DragOverlay>
         </DndContext>
       </motion.div>
+
+      <TaskDialog
+        open={showTaskDialog}
+        onOpenChange={setShowTaskDialog}
+        projectId={projectId}
+        initialStatus={newTaskStatus}
+      />
+
+      <TaskDetailsDialog
+        open={showTaskDetails}
+        onOpenChange={setShowTaskDetails}
+        task={selectedTask}
+      />
+
+      <FilterDialog
+        open={showFilters}
+        onOpenChange={setShowFilters}
+        filters={filters}
+        onFiltersChange={setFilters}
+        availableTags={availableTags}
+      />
     </div>
   );
 };

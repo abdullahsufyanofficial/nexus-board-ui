@@ -10,9 +10,10 @@ interface TaskColumnProps {
   count: number;
   color: string;
   children: React.ReactNode;
+  onAddTask?: () => void;
 }
 
-const TaskColumn = ({ id, title, count, color, children }: TaskColumnProps) => {
+const TaskColumn = ({ id, title, count, color, children, onAddTask }: TaskColumnProps) => {
   const { setNodeRef } = useDroppable({
     id,
   });
@@ -26,7 +27,7 @@ const TaskColumn = ({ id, title, count, color, children }: TaskColumnProps) => {
             <h3 className="font-medium">{title}</h3>
             <span className="text-muted-foreground text-sm">({count})</span>
           </div>
-          <Button variant="ghost" size="icon" className="h-6 w-6">
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onAddTask}>
             <Plus className="h-4 w-4" />
           </Button>
         </div>
