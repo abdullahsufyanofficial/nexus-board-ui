@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Camera, Mail, Phone, MapPin, Calendar, Edit, Save, X } from 'lucide-react';
+import { Camera, Mail, Phone, MapPin, Calendar, Edit, Save, X, Monitor, Sun, Moon } from 'lucide-react';
 
 import { RootState, AppDispatch } from '@/store';
 import { updateUser } from '@/store/slices/authSlice';
+import { useTheme } from '@/components/providers/ThemeProvider';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,7 @@ const ProfilePage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
   const { user } = useSelector((state: RootState) => state.auth);
+  const { theme, setTheme } = useTheme();
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -36,7 +38,7 @@ const ProfilePage = () => {
       mentions: true,
       tasks: true,
     },
-    theme: 'system',
+    theme: theme,
   });
 
   const handleSave = async () => {
@@ -75,9 +77,26 @@ const ProfilePage = () => {
         mentions: true,
         tasks: true,
       },
-      theme: 'system',
+      theme: theme,
     });
     setIsEditing(false);
+  };
+
+  const handleThemeChange = (newTheme: string) => {
+    const themeValue = newTheme as 'light' | 'dark' | 'system';
+    setTheme(themeValue);
+    setFormData({ ...formData, theme: themeValue });
+  };
+
+  const getThemeIcon = (themeValue: string) => {
+    switch (themeValue) {
+      case 'light':
+        return <Sun className="h-4 w-4" />;
+      case 'dark':
+        return <Moon className="h-4 w-4" />;
+      default:
+        return <Monitor className="h-4 w-4" />;
+    }
   };
 
   const handleNotificationChange = (key: string, value: boolean) => {
@@ -320,19 +339,20 @@ const ProfilePage = () => {
             <CardContent>
               <div className="space-y-2">
                 <Label htmlFor="theme">Theme</Label>
-                <Select
-                  value={formData.theme}
-                  onValueChange={(value) => setFormData({ ...formData, theme: value })}
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="light">Light</SelectItem>
-                    <SelectItem value="dark">Dark</SelectItem>
-                    <SelectItem value="system">System</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="grid grid-cols-3 gap-2">
+                  {['light', 'dark', 'system'].map((themeOption) => (
+                    <Button
+                      key={themeOption}
+                      variant={theme === themeOption ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleThemeChange(themeOption)}
+                      className="flex items-center gap-2 capitalize"
+                    >
+                      {getThemeIcon(themeOption)}
+                      {themeOption}
+                    </Button>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>

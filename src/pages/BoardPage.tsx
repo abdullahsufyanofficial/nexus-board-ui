@@ -27,6 +27,7 @@ import TaskColumn from '../components/board/TaskColumn';
 import TaskDialog from '../components/dialogs/TaskDialog';
 import TaskDetailsDialog from '../components/dialogs/TaskDetailsDialog';
 import FilterDialog, { FilterOptions } from '../components/dialogs/FilterDialog';
+import AssigneesDialog from '../components/dialogs/AssigneesDialog';
 
 import { RootState } from '../store';
 import { fetchProjectById } from '../store/slices/projectsSlice';
@@ -52,6 +53,7 @@ const BoardPage = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [newTaskStatus, setNewTaskStatus] = useState<Task['status']>('todo');
   const [showFilters, setShowFilters] = useState(false);
+  const [showAssignees, setShowAssignees] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
     status: [],
     priority: [],
@@ -232,7 +234,7 @@ const BoardPage = () => {
                 </Badge>
               )}
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setShowAssignees(true)}>
               <Users className="mr-2 h-4 w-4" />
               Assignees
             </Button>
@@ -338,6 +340,12 @@ const BoardPage = () => {
         filters={filters}
         onFiltersChange={setFilters}
         availableTags={availableTags}
+      />
+
+      <AssigneesDialog
+        open={showAssignees}
+        onOpenChange={setShowAssignees}
+        projectId={projectId}
       />
     </div>
   );

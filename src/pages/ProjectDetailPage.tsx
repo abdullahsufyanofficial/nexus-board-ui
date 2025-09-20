@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Settings, Users, Calendar, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Settings, Users, Calendar, ExternalLink, UserPlus, CheckSquare, Clock, AlertCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,12 +14,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RootState } from '../store';
 import { fetchProjectById } from '../store/slices/projectsSlice';
 import { fetchTasks } from '../store/slices/tasksSlice';
+import TeamMemberDialog from '../components/dialogs/TeamMemberDialog';
+import AddTeamMemberDialog from '../components/dialogs/AddTeamMemberDialog';
 
 const ProjectDetailPage = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const dispatch = useDispatch();
   const { currentProject, isLoading } = useSelector((state: RootState) => state.projects);
   const { tasks } = useSelector((state: RootState) => state.tasks);
+  
+  const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [showMemberDialog, setShowMemberDialog] = useState(false);
+  const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
 
   useEffect(() => {
     if (projectId) {
@@ -54,6 +60,19 @@ const ProjectDetailPage = () => {
   const projectTasks = tasks.filter(task => task.projectId === projectId);
   const completedTasks = projectTasks.filter(task => task.status === 'done').length;
   const totalTasks = projectTasks.length;
+
+  const handleMemberManage = (member: any) => {
+    setSelectedMember(member);
+    setShowMemberDialog(true);
+  };
+
+  // Mock activity data
+  const mockActivities = [
+    { id: 1, user: 'John Doe', action: 'completed task', target: 'Fix login bug', time: '2 hours ago' },
+    { id: 2, user: 'Jane Smith', action: 'created task', target: 'Update dashboard UI', time: '4 hours ago' },
+    { id: 3, user: 'Mike Johnson', action: 'commented on', target: 'API integration', time: '6 hours ago' },
+    { id: 4, user: 'Sarah Wilson', action: 'updated status', target: 'User authentication', time: '1 day ago' },
+  ];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -304,51 +323,102 @@ const ProjectDetailPage = () => {
           <TabsContent value="tasks">
             <Card>
               <CardHeader>
-                <CardTitle>Tasks</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Project Tasks</CardTitle>
+                  <Link to={`/projects/${projectId}/board`}>
+                    <Button variant="outline">View Kanban Board</Button>
+                  </Link>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>Task list view will be implemented here</p>
-                  <Link to={`/projects/${projectId}/board`}>
-                    <Button className="mt-4">View Kanban Board</Button>
-                  </Link>
+                <div className="space-y-4">
+                  {projectTasks.length > 0 ? (
+                    projectTasks.slice(0, 10).map((task) => (
+                      <div key={task.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-2 h-2 rounded-full ${
+                            task.status === 'done' ? 'bg-success' :
+                            task.status === 'in-progress' ? 'bg-primary' :
+                            task.status === 'review' ? 'bg-warning' :
+                            'bg-muted-foreground'
+                          }`} />
+                          <div>
+                            <p className="font-medium">{task.title}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {task.assignees[0]?.name} • {task.priority} priority
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={task.status === 'done' ? 'default' : 'outline'}>
+                            {task.status}
+                          </Badge>
+                          {task.dueDate && (
+                            <Badge variant="outline" className="text-xs">
+                              Due {new Date(task.dueDate).toLocaleDateString()}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <CheckSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                      <p>No tasks yet</p>
+                      <Link to={`/projects/${projectId}/board`}>
+                        <Button className="mt-4">Create First Task</Button>
+                      </Link>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="team">
-            <Card>
-              <CardHeader>
-                <CardTitle>Team Management</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {currentProject.members.map((member) => (
-                    <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={member.avatar} />
-                          <AvatarFallback>
-                            {member.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{member.name}</p>
-                          <p className="text-sm text-muted-foreground">{member.email}</p>
-                          <Badge variant="outline" className="mt-1 capitalize">
-                            {member.role}
-                          </Badge>
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Team Management</CardTitle>
+                    <Button onClick={() => setShowAddMemberDialog(true)}>
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Add Member
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {currentProject.members.map((member) => (
+                      <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={member.avatar} />
+                            <AvatarFallback className="bg-gradient-primary text-white">
+                              {member.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">{member.name}</p>
+                            <p className="text-sm text-muted-foreground">{member.email}</p>
+                            <Badge variant="outline" className="mt-1 capitalize">
+                              {member.role}
+                            </Badge>
+                          </div>
                         </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleMemberManage(member)}
+                        >
+                          Manage
+                        </Button>
                       </div>
-                      <Button variant="outline" size="sm">
-                        Manage
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="activity">
@@ -357,14 +427,40 @@ const ProjectDetailPage = () => {
                 <CardTitle>Project Activity</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>Activity feed will be implemented here</p>
+                <div className="space-y-4">
+                  {mockActivities.map((activity) => (
+                    <div key={activity.id} className="flex items-start gap-3 p-4 border rounded-lg">
+                      <div className="w-2 h-2 rounded-full bg-primary mt-2" />
+                      <div className="flex-1">
+                        <p className="text-sm">
+                          <span className="font-medium">{activity.user}</span>
+                          {' '}{activity.action}{' '}
+                          <span className="font-medium">{activity.target}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {activity.time}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </motion.div>
+
+      <TeamMemberDialog
+        open={showMemberDialog}
+        onOpenChange={setShowMemberDialog}
+        member={selectedMember}
+      />
+
+      <AddTeamMemberDialog
+        open={showAddMemberDialog}
+        onOpenChange={setShowAddMemberDialog}
+        projectId={projectId!}
+      />
     </div>
   );
 };

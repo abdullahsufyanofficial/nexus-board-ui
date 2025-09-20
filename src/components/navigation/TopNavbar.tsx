@@ -1,4 +1,4 @@
-import { Search, Bell, Plus } from "lucide-react";
+import { Search, Bell, Plus, Settings, Users } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { RootState } from "../../store";
@@ -32,6 +32,14 @@ export function TopNavbar() {
 
   const handleProfileClick = () => {
     navigate('/profile');
+  };
+
+  const handleSettingsClick = () => {
+    navigate('/settings');
+  };
+
+  const handleTeamClick = () => {
+    navigate('/teams');
   };
 
   const getInitials = (name: string) => {
@@ -97,9 +105,18 @@ export function TopNavbar() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleProfileClick}>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuItem>Team</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleProfileClick}>
+              <Users className="mr-2 h-4 w-4" />
+              Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleSettingsClick}>
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleTeamClick}>
+              <Users className="mr-2 h-4 w-4" />
+              Team
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               Log out

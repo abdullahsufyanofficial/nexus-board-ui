@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   FolderOpen, 
@@ -63,6 +64,7 @@ const teamUtilizationData = [
 
 const Dashboard = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { projects } = useSelector((state: RootState) => state.projects);
   const { tasks } = useSelector((state: RootState) => state.tasks);
   const { user } = useSelector((state: RootState) => state.auth);
@@ -143,7 +145,7 @@ const Dashboard = () => {
             >
               Today
             </Button>
-            <Button>
+            <Button onClick={() => navigate('/reports')}>
               <TrendingUp className="mr-2 h-4 w-4" />
               View Reports
             </Button>
