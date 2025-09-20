@@ -1,8 +1,9 @@
-import { Search, Bell, Plus, Settings, Users } from "lucide-react";
+import { Search, Bell, Plus, Settings, Users, Sun, Moon, Monitor } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { RootState } from "../../store";
 import { logoutUser } from "../../store/slices/authSlice";
+import { useTheme } from "@/components/providers/ThemeProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,6 +22,7 @@ export function TopNavbar() {
   const user = useSelector((state: RootState) => state.auth.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
 
   const handleLogout = () => {
     dispatch(logoutUser() as any);
@@ -50,6 +52,27 @@ export function TopNavbar() {
       .toUpperCase();
   };
 
+  const toggleTheme = () => {
+    if (theme === 'light') {
+      setTheme('dark');
+    } else if (theme === 'dark') {
+      setTheme('system');
+    } else {
+      setTheme('light');
+    }
+  };
+
+  const getThemeIcon = () => {
+    switch (theme) {
+      case 'light':
+        return <Sun className="h-4 w-4" />;
+      case 'dark':
+        return <Moon className="h-4 w-4" />;
+      default:
+        return <Monitor className="h-4 w-4" />;
+    }
+  };
+
   return (
     <header className="flex h-16 items-center justify-between border-b border-border/50 bg-card/50 backdrop-blur-sm px-6">
       <div className="flex items-center gap-4">
@@ -70,6 +93,16 @@ export function TopNavbar() {
         <Button size="sm" className="gap-2" onClick={handleNewProject}>
           <Plus className="h-4 w-4" />
           New Project
+        </Button>
+
+        {/* Theme Toggle */}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={toggleTheme}
+          title={`Switch to ${theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light'} theme`}
+        >
+          {getThemeIcon()}
         </Button>
 
         {/* Notifications */}
