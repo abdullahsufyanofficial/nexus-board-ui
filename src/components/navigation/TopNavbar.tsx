@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { RootState } from "../../store";
 import { logoutUser } from "../../store/slices/authSlice";
 import { useTheme } from "@/components/providers/ThemeProvider";
+import { NotificationsDialog } from "@/components/dialogs/NotificationsDialog";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,25 +25,26 @@ export function TopNavbar() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const handleLogout = () => {
     dispatch(logoutUser() as any);
   };
 
   const handleNewProject = () => {
-    navigate('/projects?new=true');
+    navigate('/dashboard/projects?new=true');
   };
 
   const handleProfileClick = () => {
-    navigate('/profile');
+    navigate('/dashboard/profile');
   };
 
   const handleSettingsClick = () => {
-    navigate('/settings');
+    navigate('/dashboard/settings');
   };
 
   const handleTeamClick = () => {
-    navigate('/teams');
+    navigate('/dashboard/teams');
   };
 
   const getInitials = (name: string) => {
@@ -106,7 +109,12 @@ export function TopNavbar() {
         </Button>
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="relative"
+          onClick={() => setNotificationsOpen(true)}
+        >
           <Bell className="h-5 w-5" />
           <Badge
             variant="destructive"
@@ -157,6 +165,11 @@ export function TopNavbar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      
+      <NotificationsDialog 
+        open={notificationsOpen} 
+        onOpenChange={setNotificationsOpen} 
+      />
     </header>
   );
 }

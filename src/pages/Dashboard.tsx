@@ -145,7 +145,7 @@ const Dashboard = () => {
             >
               Today
             </Button>
-            <Button onClick={() => navigate('/reports')}>
+            <Button onClick={() => navigate('/dashboard/reports')}>
               <TrendingUp className="mr-2 h-4 w-4" />
               View Reports
             </Button>

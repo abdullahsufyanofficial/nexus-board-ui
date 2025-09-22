@@ -25,17 +25,17 @@ import {
 } from "@/components/ui/sidebar";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Projects", href: "/projects", icon: FolderKanban },
-  { name: "Tasks", href: "/tasks", icon: CheckSquare },
-  { name: "Teams", href: "/teams", icon: Users },
-  { name: "Calendar", href: "/calendar", icon: Calendar },
-  { name: "Reports", href: "/reports", icon: BarChart3 },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Projects", href: "/dashboard/projects", icon: FolderKanban },
+  { name: "Tasks", href: "/dashboard/tasks", icon: CheckSquare },
+  { name: "Teams", href: "/dashboard/teams", icon: Users },
+  { name: "Calendar", href: "/dashboard/calendar", icon: Calendar },
+  { name: "Reports", href: "/dashboard/reports", icon: BarChart3 },
 ];
 
 const secondaryNavigation = [
-  { name: "Billing", href: "/billing", icon: CreditCard },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
+  { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -44,8 +44,8 @@ export function AppSidebar() {
   const isCollapsed = state === "collapsed";
 
   const isActive = (path: string) => {
-    if (path === "/") {
-      return location.pathname === "/";
+    if (path === "/dashboard") {
+      return location.pathname === "/dashboard";
     }
     return location.pathname.startsWith(path);
   };
