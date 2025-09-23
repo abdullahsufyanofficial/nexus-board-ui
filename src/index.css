@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import Inter font for better typography */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 /* ProjectFlow Design System - Modern SaaS Aesthetic */
 @layer base {
   :root {
@@ -67,6 +70,7 @@
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(239 84% 67%) 0%, hsl(262 83% 58%) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(215 20% 96%) 0%, hsl(215 20% 92%) 100%);
+    --gradient-subtle: linear-gradient(135deg, hsl(239 84% 97%) 0%, hsl(262 83% 97%) 100%);
     --gradient-mesh: radial-gradient(circle at 20% 80%, hsla(239 84% 67% / 0.15) 0%, transparent 50%),
                      radial-gradient(circle at 80% 20%, hsla(262 83% 58% / 0.15) 0%, transparent 50%),
                      radial-gradient(circle at 40% 40%, hsla(142 76% 36% / 0.1) 0%, transparent 50%);
@@ -134,6 +138,8 @@
     --gradient-mesh: radial-gradient(circle at 20% 80%, hsla(239 84% 67% / 0.3) 0%, transparent 50%),
                      radial-gradient(circle at 80% 20%, hsla(262 83% 58% / 0.3) 0%, transparent 50%),
                      radial-gradient(circle at 40% 40%, hsla(142 76% 36% / 0.2) 0%, transparent 50%);
+    
+    --gradient-subtle: linear-gradient(135deg, hsl(239 84% 15%) 0%, hsl(262 83% 15%) 100%);
   }
 }
 
@@ -144,6 +150,7 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     font-synthesis: none;
     text-rendering: optimizeLegibility;
@@ -181,6 +188,10 @@
 
   .bg-gradient-mesh {
     background: var(--gradient-mesh);
+  }
+
+  .bg-gradient-subtle {
+    background: var(--gradient-subtle);
   }
 
   /* Custom Shadows */
@@ -226,6 +237,20 @@
   .interactive-hover {
     @apply transition-all duration-200 hover:scale-105 hover:shadow-lg;
   }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom animations */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
 }
 
 @keyframes fade-in {
@@ -259,4 +284,34 @@
     opacity: 1;
     transform: scale(1);
   }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+  }
+  to {
+    box-shadow: 0 0 30px hsl(var(--primary) / 0.6);
+  }
+}
+
+/* Improved focus styles */
+*:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+/* Better selection colors */
+::selection {
+  background: hsl(var(--primary) / 0.2);
+  color: hsl(var(--foreground));
 }
