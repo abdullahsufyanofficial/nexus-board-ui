@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Shield, Lock, Eye, FileText, Download, Mail, CheckCircle, Globe, Users, Zap } from "lucide-react";
+import { Shield, Lock, Eye, FileText, Download, Mail, CircleCheck as CheckCircle, Globe, Users, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 

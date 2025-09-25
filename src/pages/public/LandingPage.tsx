@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, CheckCircle, Users, Target, Zap, Star, BarChart3, Shield, Rocket, Play, TrendingUp, Globe, Clock, Sparkles, Award, Infinity } from "lucide-react";
+import { ArrowRight, CircleCheck as CheckCircle, Users, Target, Zap, Star, ChartBar as BarChart3, Shield, Rocket, Play, TrendingUp, Globe, Clock, Sparkles, Award, Infinity } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function LandingPage() {
