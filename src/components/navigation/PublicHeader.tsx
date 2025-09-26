@@ -336,6 +336,6 @@ export function PublicHeader() {
           </motion.div>
         )}
       </AnimatePresence>
-    </header>
+    </motion.header>
   );
 }
