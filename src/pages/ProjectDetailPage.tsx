@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Settings, Users, Calendar, ExternalLink, UserPlus, CheckSquare, Clock, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Settings, Users, Calendar, ExternalLink, UserPlus, SquareCheck as CheckSquare, Clock, CircleAlert as AlertCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -121,7 +121,7 @@ const ProjectDetailPage = () => {
             <Link to={`/dashboard/projects/${projectId}/settings`}>
               <Button>
                 <Settings className="mr-2 h-4 w-4" />
-            <Link to="/dashboard/projects">
+                Settings
               </Button>
             </Link>
           </div>
