@@ -98,7 +98,7 @@ const ProjectDetailPage = () => {
         transition={{ duration: 0.3 }}
       >
         <div className="flex items-center gap-4 mb-4">
-          <Link to="/projects">
+          <Link to="/dashboard/projects">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -113,15 +113,15 @@ const ProjectDetailPage = () => {
             <p className="text-muted-foreground">{currentProject.description}</p>
           </div>
           <div className="flex gap-2">
-            <Link to={`/projects/${projectId}/board`}>
+            <Link to={`/dashboard/projects/${projectId}/board`}>
               <Button variant="outline">
                 View Board
               </Button>
             </Link>
-            <Link to={`/projects/${projectId}/settings`}>
+            <Link to={`/dashboard/projects/${projectId}/settings`}>
               <Button>
                 <Settings className="mr-2 h-4 w-4" />
-                Settings
+            <Link to="/dashboard/projects">
               </Button>
             </Link>
           </div>
@@ -325,7 +325,7 @@ const ProjectDetailPage = () => {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Project Tasks</CardTitle>
-                  <Link to={`/projects/${projectId}/board`}>
+                  <Link to={`/dashboard/projects/${projectId}/board`}>
                     <Button variant="outline">View Kanban Board</Button>
                   </Link>
                 </div>
@@ -365,7 +365,7 @@ const ProjectDetailPage = () => {
                     <div className="text-center py-8 text-muted-foreground">
                       <CheckSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                       <p>No tasks yet</p>
-                      <Link to={`/projects/${projectId}/board`}>
+                      <Link to={`/dashboard/projects/${projectId}/board`}>
                         <Button className="mt-4">Create First Task</Button>
                       </Link>
                     </div>
