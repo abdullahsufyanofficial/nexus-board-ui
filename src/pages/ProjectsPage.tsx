@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, Search, Filter, Grid, List, FolderOpen } from 'lucide-react';
+import { Plus, Search, Filter, Grid2x2 as Grid, List, FolderOpen } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -223,7 +223,7 @@ const ProjectsPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
               >
-                <Link to={`/dashboard/projects/${project.id}`}>
+                <Link to={`/projects/${project.id}`}>
                   <Card className="h-full hover:shadow-lg transition-all duration-200 hover:scale-105 cursor-pointer">
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
@@ -307,7 +307,7 @@ const ProjectsPage = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
               >
-                <Link to={`/dashboard/projects/${project.id}`}>
+                <Link to={`/projects/${project.id}`}>
                   <Card className="hover:shadow-md transition-all duration-200 cursor-pointer">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-4">
