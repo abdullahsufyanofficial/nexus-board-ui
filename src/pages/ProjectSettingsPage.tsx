@@ -66,7 +66,7 @@ const ProjectSettingsPage = () => {
   }, [currentProject, reset]);
 
   if (!projectId) {
-    return <Navigate to="/projects" replace />;
+    return <Navigate to="/dashboard/projects" replace />;
   }
 
   if (isLoading) {
@@ -81,7 +81,7 @@ const ProjectSettingsPage = () => {
     return (
       <div className="text-center py-12">
         <h3 className="text-lg font-semibold">Project not found</h3>
-        <Link to="/projects">
+        <Link to="/dashboard/projects">
           <Button className="mt-4">Back to Projects</Button>
         </Link>
       </div>
@@ -144,6 +144,7 @@ const ProjectSettingsPage = () => {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link to={`/projects/${projectId}`}>
+        <Link to={`/dashboard/projects/${projectId}`}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -363,7 +364,7 @@ const ProjectSettingsPage = () => {
         </Tabs>
 
         <div className="flex justify-end gap-3 pt-6 border-t">
-          <Link to={`/projects/${projectId}`}>
+          <Link to={`/dashboard/projects/${projectId}`}>
             <Button variant="outline">Cancel</Button>
           </Link>
           <Button type="submit" disabled={isLoading}>
