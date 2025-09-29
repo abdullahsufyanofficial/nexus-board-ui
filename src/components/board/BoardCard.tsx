@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { MoreHorizontal, Edit, Trash2, Eye, EyeOff, Snowflake, Play, Pause } from 'lucide-react';
+import { MoveHorizontal as MoreHorizontal, CreditCard as Edit, Trash2, Eye, EyeOff, Snowflake, Play, Pause } from 'lucide-react';
 
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
