@@ -63,6 +63,7 @@ export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 export interface Task {
   id: string;
   projectId: string;
+  boardId?: string;
   title: string;
   description?: string;
   status: TaskStatus;
@@ -74,6 +75,22 @@ export interface Task {
   commentsCount: number;
   estimatedHours?: number;
   actualHours?: number;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+}
+
+// Board Types
+export interface Board {
+  id: string;
+  projectId: string;
+  name: string;
+  description?: string;
+  color: string;
+  position: number;
+  status: 'active' | 'inactive';
+  isEnabled: boolean;
+  isFrozen: boolean;
   createdAt: string;
   updatedAt: string;
   createdBy: string;

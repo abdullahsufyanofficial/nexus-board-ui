@@ -6,6 +6,7 @@ export const tasks: Task[] = [
   {
     id: '1',
     projectId: '1',
+    boardId: 'board-1',
     title: 'Implement user authentication',
     description: 'Add biometric authentication and social login options',
     status: 'done',
@@ -24,6 +25,7 @@ export const tasks: Task[] = [
   {
     id: '2',
     projectId: '1',
+    boardId: 'board-1',
     title: 'Design offline sync mechanism',
     description: 'Implement conflict resolution for offline data synchronization',
     status: 'in-progress',
@@ -42,6 +44,7 @@ export const tasks: Task[] = [
   {
     id: '3',
     projectId: '1',
+    boardId: 'board-2',
     title: 'Optimize app performance',
     description: 'Profile and optimize app startup time and memory usage',
     status: 'todo',
@@ -61,6 +64,7 @@ export const tasks: Task[] = [
   {
     id: '4',
     projectId: '2',
+    boardId: 'board-1',
     title: 'Create new chart components',
     description: 'Build reusable chart components with D3.js and React',
     status: 'in-progress',
@@ -79,6 +83,7 @@ export const tasks: Task[] = [
   {
     id: '5',
     projectId: '2',
+    boardId: 'board-1',
     title: 'Implement real-time data updates',
     description: 'Add WebSocket connection for live data streaming',
     status: 'review',
@@ -99,6 +104,7 @@ export const tasks: Task[] = [
   {
     id: '6',
     projectId: '3',
+    boardId: 'board-1',
     title: 'Setup rate limiting',
     description: 'Implement Redis-based rate limiting with configurable rules',
     status: 'done',
@@ -117,6 +123,7 @@ export const tasks: Task[] = [
   {
     id: '7',
     projectId: '3',
+    boardId: 'board-1',
     title: 'Add service discovery',
     description: 'Integrate with Consul for automatic service discovery',
     status: 'done',
@@ -137,6 +144,7 @@ export const tasks: Task[] = [
   {
     id: '8',
     projectId: '4',
+    boardId: 'board-1',
     title: 'Design ticket system UI',
     description: 'Create wireframes and mockups for ticket management interface',
     status: 'in-progress',
@@ -155,6 +163,7 @@ export const tasks: Task[] = [
   {
     id: '9',
     projectId: '4',
+    boardId: 'board-1',
     title: 'Build knowledge base search',
     description: 'Implement full-text search with Elasticsearch',
     status: 'todo',
@@ -174,6 +183,7 @@ export const tasks: Task[] = [
   {
     id: '10',
     projectId: '5',
+    boardId: 'board-1',
     title: 'Setup Kubernetes cluster',
     description: 'Configure production-ready K8s cluster with monitoring and logging',
     status: 'in-progress',
@@ -194,6 +204,7 @@ export const tasks: Task[] = [
   {
     id: '11',
     projectId: '6',
+    boardId: 'board-1',
     title: 'Create component documentation',
     description: 'Write comprehensive docs with usage examples and props',
     status: 'done',
