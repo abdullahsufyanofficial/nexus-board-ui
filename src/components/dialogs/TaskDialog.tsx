@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useForm } from 'react-hook-form';
-import { CalendarIcon, User, Tag, AlertCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, User, Tag, CircleAlert as AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
