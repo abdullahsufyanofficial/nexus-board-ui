@@ -11,11 +11,13 @@ import {
   useSensor,
   useSensors,
   closestCenter,
+  DragOverEvent,
 } from '@dnd-kit/core';
 import {
   SortableContext,
   arrayMove,
   horizontalListSortingStrategy,
+  verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { ArrowLeft, Plus, Filter, Users, Calendar, Settings, Layers } from 'lucide-react';
 
@@ -24,6 +26,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import BoardCard from '../components/board/BoardCard';
+import TaskCard from '../components/board/TaskCard';
+import TaskColumn from '../components/board/TaskColumn';
 import BoardDialog from '../components/dialogs/BoardDialog';
 import TaskDialog from '../components/dialogs/TaskDialog';
 import TaskDetailsDialog from '../components/dialogs/TaskDetailsDialog';
@@ -33,9 +37,16 @@ import { useToast } from '@/hooks/use-toast';
 
 import { RootState } from '../store';
 import { fetchProjectById } from '../store/slices/projectsSlice';
-import { fetchTasks } from '../store/slices/tasksSlice';
+import { fetchTasks, updateTaskStatus, moveTaskOptimistic } from '../store/slices/tasksSlice';
 import { fetchBoards, updateBoard, deleteBoard, reorderBoards, reorderBoardsOptimistic } from '../store/slices/boardsSlice';
-import { Board, Task } from '../types';
+import { Board, Task, TaskStatus } from '../types';
+
+const TASK_COLUMNS = [
+  { id: 'todo', title: 'To Do', color: 'bg-slate-500' },
+  { id: 'in-progress', title: 'In Progress', color: 'bg-blue-500' },
+  { id: 'review', title: 'Review', color: 'bg-amber-500' },
+  { id: 'done', title: 'Done', color: 'bg-green-500' },
+] as const;
 
 const BoardPage = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -47,6 +58,7 @@ const BoardPage = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   
   const [activeBoard, setActiveBoard] = useState<Board | null>(null);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
   const [showBoardDialog, setShowBoardDialog] = useState(false);
   const [editingBoard, setEditingBoard] = useState<Board | null>(null);
@@ -56,6 +68,7 @@ const BoardPage = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [showAssignees, setShowAssignees] = useState(false);
+  const [newTaskStatus, setNewTaskStatus] = useState<TaskStatus>('todo');
   const [filters, setFilters] = useState<FilterOptions>({
     status: [],
     priority: [],
@@ -97,31 +110,104 @@ const BoardPage = () => {
     return tasks.filter(task => task.boardId === boardId || (!task.boardId && boardId === boards[0]?.id));
   };
 
-  const handleBoardDragStart = (event: DragStartEvent) => {
-    const board = boards.find(b => b.id === event.active.id);
-    if (board) {
-      setActiveBoard(board);
+  const getTasksByStatus = (status: TaskStatus, boardId?: string) => {
+    const boardTasks = boardId ? getTasksByBoard(boardId) : tasks;
+    return boardTasks.filter(task => task.status === status);
+  };
+
+  const getPriorityColor = (priority: Task['priority']) => {
+    switch (priority) {
+      case 'urgent':
+        return 'destructive';
+      case 'high':
+        return 'destructive';
+      case 'medium':
+        return 'default';
+      case 'low':
+        return 'secondary';
+      default:
+        return 'secondary';
     }
   };
 
-  const handleBoardDragEnd = (event: DragEndEvent) => {
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    
+    if (active.data.current?.type === 'board') {
+      const board = boards.find(b => b.id === active.id);
+      if (board) {
+        setActiveBoard(board);
+      }
+    } else if (active.data.current?.type === 'task') {
+      const task = tasks.find(t => t.id === active.id);
+      if (task) {
+        setActiveTask(task);
+      }
+    }
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
+    
+    if (!over) return;
+    
+    // Handle task drag over different columns
+    if (active.data.current?.type === 'task' && over.data.current?.type === 'column') {
+      const taskId = active.id as string;
+      const newStatus = over.id as TaskStatus;
+      
+      const task = tasks.find(t => t.id === taskId);
+      if (task && task.status !== newStatus) {
+        // Optimistic update
+        dispatch(moveTaskOptimistic({ taskId, newStatus }));
+      }
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
     setActiveBoard(null);
+    setActiveTask(null);
 
-    if (!over || active.id === over.id) return;
+    if (!over) return;
 
-    const oldIndex = boards.findIndex(b => b.id === active.id);
-    const newIndex = boards.findIndex(b => b.id === over.id);
+    // Handle board reordering
+    if (active.data.current?.type === 'board' && over.data.current?.type === 'board') {
+      const oldIndex = boards.findIndex(b => b.id === active.id);
+      const newIndex = boards.findIndex(b => b.id === over.id);
 
-    if (oldIndex !== -1 && newIndex !== -1) {
-      const newOrder = arrayMove(boards, oldIndex, newIndex);
-      const boardIds = newOrder.map(b => b.id);
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+        const newOrder = arrayMove(boards, oldIndex, newIndex);
+        const boardIds = newOrder.map(b => b.id);
+        
+        // Optimistic update
+        dispatch(reorderBoardsOptimistic(boardIds));
+        
+        // Update on server
+        dispatch(reorderBoards(boardIds) as any);
+      }
+    }
+    
+    // Handle task status change
+    else if (active.data.current?.type === 'task') {
+      const taskId = active.id as string;
+      let newStatus: TaskStatus;
       
-      // Optimistic update
-      dispatch(reorderBoardsOptimistic(boardIds));
+      if (over.data.current?.type === 'column') {
+        newStatus = over.id as TaskStatus;
+      } else if (over.data.current?.type === 'task') {
+        const overTask = tasks.find(t => t.id === over.id);
+        newStatus = overTask?.status || 'todo';
+      } else {
+        return;
+      }
       
-      // Update on server
-      dispatch(reorderBoards(boardIds) as any);
+      const task = tasks.find(t => t.id === taskId);
+      if (task && task.status !== newStatus) {
+        // Update on server
+        dispatch(updateTaskStatus({ taskId, status: newStatus }) as any);
+      }
     }
   };
 
@@ -228,6 +314,19 @@ const BoardPage = () => {
     }
   };
 
+  const handleAddTask = (status: TaskStatus) => {
+    if (selectedBoard?.isFrozen) {
+      toast({
+        title: "Board Frozen",
+        description: "Cannot add tasks to a frozen board.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setNewTaskStatus(status);
+    setShowTaskDialog(true);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -262,6 +361,14 @@ const BoardPage = () => {
           </div>
           
           <div className="flex items-center gap-3">
+            <Button variant="outline" onClick={() => setShowFilters(true)}>
+              <Filter className="mr-2 h-4 w-4" />
+              Filter
+            </Button>
+            <Button variant="outline" onClick={() => setShowAssignees(true)}>
+              <Users className="mr-2 h-4 w-4" />
+              Assignees
+            </Button>
             {canManageBoards && (
               <Button onClick={() => setShowBoardDialog(true)}>
                 <Plus className="mr-2 h-4 w-4" />
@@ -272,187 +379,162 @@ const BoardPage = () => {
         </div>
       </motion.div>
 
-      {/* Boards Grid */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
       >
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Layers className="h-5 w-5" />
-            Project Boards ({boards.length})
-          </h2>
-          
-          {boards.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-12">
-                  <Layers className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <h3 className="mt-2 text-lg font-semibold">No boards yet</h3>
-                  <p className="text-muted-foreground">
-                    Create your first board to start organizing tasks
-                  </p>
-                  {canManageBoards && (
-                    <Button className="mt-4" onClick={() => setShowBoardDialog(true)}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Create Board
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragStart={handleBoardDragStart}
-              onDragEnd={handleBoardDragEnd}
-            >
+        {/* Boards Management Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <Layers className="h-5 w-5" />
+              Project Boards ({boards.length})
+            </h2>
+            
+            {boards.length === 0 ? (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center py-12">
+                    <Layers className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-2 text-lg font-semibold">No boards yet</h3>
+                    <p className="text-muted-foreground">
+                      Create your first board to start organizing tasks
+                    </p>
+                    {canManageBoards && (
+                      <Button className="mt-4" onClick={() => setShowBoardDialog(true)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create Board
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
               <SortableContext
                 items={boards.map(board => board.id)}
                 strategy={horizontalListSortingStrategy}
               >
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="flex gap-4 overflow-x-auto pb-4">
                   {boards.map((board) => {
                     const taskCount = getTasksByBoard(board.id).length;
                     return (
-                      <BoardCard
-                        key={board.id}
-                        board={board}
-                        taskCount={taskCount}
-                        canManage={canManageBoards}
-                        onEdit={() => handleEditBoard(board)}
-                        onDelete={() => setDeletingBoard(board)}
-                        onToggleStatus={() => handleToggleBoardStatus(board)}
-                        onToggleEnabled={() => handleToggleBoardEnabled(board)}
-                        onToggleFrozen={() => handleToggleBoardFrozen(board)}
-                        onSelect={() => handleBoardSelect(board)}
-                      />
+                      <div key={board.id} className="flex-shrink-0">
+                        <BoardCard
+                          board={board}
+                          taskCount={taskCount}
+                          canManage={canManageBoards}
+                          onEdit={() => handleEditBoard(board)}
+                          onDelete={() => setDeletingBoard(board)}
+                          onToggleStatus={() => handleToggleBoardStatus(board)}
+                          onToggleEnabled={() => handleToggleBoardEnabled(board)}
+                          onToggleFrozen={() => handleToggleBoardFrozen(board)}
+                          onSelect={() => handleBoardSelect(board)}
+                          isSelected={selectedBoard?.id === board.id}
+                        />
+                      </div>
                     );
                   })}
                 </div>
               </SortableContext>
+            )}
+          </div>
 
-              <DragOverlay>
-                {activeBoard ? (
-                  <BoardCard
-                    board={activeBoard}
-                    taskCount={getTasksByBoard(activeBoard.id).length}
-                    canManage={canManageBoards}
-                    onEdit={() => {}}
-                    onDelete={() => {}}
-                    onToggleStatus={() => {}}
-                    onToggleEnabled={() => {}}
-                    onToggleFrozen={() => {}}
-                    onSelect={() => {}}
-                    isDragging
-                  />
-                ) : null}
-              </DragOverlay>
-            </DndContext>
-          )}
-        </div>
+          {/* Kanban Board for Selected Board */}
+          {selectedBoard && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <div className={`w-4 h-4 rounded-full ${selectedBoard.color}`} />
+                  {selectedBoard.name} - Kanban Board
+                  {selectedBoard.isFrozen && (
+                    <Badge variant="outline" className="ml-2">
+                      Read Only
+                    </Badge>
+                  )}
+                </h2>
+              </div>
 
-        {/* Selected Board Tasks */}
-        {selectedBoard && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <div className={`w-4 h-4 rounded-full ${selectedBoard.color}`} />
-                {selectedBoard.name} Tasks
-                {selectedBoard.isFrozen && (
-                  <Badge variant="outline" className="ml-2">
-                    Read Only
-                  </Badge>
-                )}
-              </h2>
-              
-              <div className="flex items-center gap-3">
-                <Button variant="outline" size="sm" onClick={() => setShowFilters(true)}>
-                  <Filter className="mr-2 h-4 w-4" />
-                  Filter
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setShowAssignees(true)}>
-                  <Users className="mr-2 h-4 w-4" />
-                  Assignees
-                </Button>
-                {!selectedBoard.isFrozen && (
-                  <Button onClick={() => setShowTaskDialog(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Task
-                  </Button>
-                )}
+              {selectedBoard.description && (
+                <p className="text-muted-foreground">{selectedBoard.description}</p>
+              )}
+
+              {/* Kanban Columns */}
+              <div className="grid grid-cols-4 gap-6 min-h-[600px]">
+                <SortableContext
+                  items={TASK_COLUMNS.map(col => col.id)}
+                  strategy={horizontalListSortingStrategy}
+                >
+                  {TASK_COLUMNS.map((column) => {
+                    const columnTasks = getTasksByStatus(column.id as TaskStatus, selectedBoard.id);
+                    
+                    return (
+                      <TaskColumn
+                        key={column.id}
+                        id={column.id}
+                        title={column.title}
+                        count={columnTasks.length}
+                        color={column.color}
+                        onAddTask={() => handleAddTask(column.id as TaskStatus)}
+                        canAddTask={!selectedBoard.isFrozen}
+                      >
+                        <SortableContext
+                          items={columnTasks.map(task => task.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          <div className="space-y-3">
+                            {columnTasks.map((task) => (
+                              <TaskCard
+                                key={task.id}
+                                task={task}
+                                getPriorityColor={getPriorityColor}
+                                onClick={() => {
+                                  setSelectedTask(task);
+                                  setShowTaskDetails(true);
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </SortableContext>
+                      </TaskColumn>
+                    );
+                  })}
+                </SortableContext>
               </div>
             </div>
+          )}
+        </motion.div>
 
-            {selectedBoard.description && (
-              <p className="text-muted-foreground">{selectedBoard.description}</p>
-            )}
-
-            {/* Task Columns for Selected Board */}
-            <div className="grid grid-cols-4 gap-6 min-h-[400px]">
-              {[
-                { id: 'todo', title: 'To Do', color: 'bg-muted' },
-                { id: 'in-progress', title: 'In Progress', color: 'bg-primary' },
-                { id: 'review', title: 'Review', color: 'bg-warning' },
-                { id: 'done', title: 'Done', color: 'bg-success' },
-              ].map((column) => {
-                const columnTasks = getTasksByBoard(selectedBoard.id).filter(task => task.status === column.id);
-                return (
-                  <Card key={column.id}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full ${column.color}`} />
-                          <h3 className="font-medium">{column.title}</h3>
-                          <span className="text-muted-foreground text-sm">({columnTasks.length})</span>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {columnTasks.map((task) => (
-                        <div
-                          key={task.id}
-                          className="p-3 border rounded-lg hover:shadow-md transition-all cursor-pointer"
-                          onClick={() => {
-                            setSelectedTask(task);
-                            setShowTaskDetails(true);
-                          }}
-                        >
-                          <h4 className="font-medium text-sm">{task.title}</h4>
-                          {task.description && (
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {task.description}
-                            </p>
-                          )}
-                          <div className="flex items-center justify-between mt-2">
-                            <Badge variant="outline" className="text-xs">
-                              {task.priority}
-                            </Badge>
-                            {task.assignees.length > 0 && (
-                              <div className="flex -space-x-1">
-                                {task.assignees.slice(0, 2).map((assignee) => (
-                                  <div
-                                    key={assignee.id}
-                                    className="w-6 h-6 rounded-full bg-primary text-white text-xs flex items-center justify-center border-2 border-background"
-                                  >
-                                    {assignee.name.charAt(0)}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </motion.div>
+        {/* Drag Overlays */}
+        <DragOverlay>
+          {activeBoard ? (
+            <BoardCard
+              board={activeBoard}
+              taskCount={getTasksByBoard(activeBoard.id).length}
+              canManage={canManageBoards}
+              onEdit={() => {}}
+              onDelete={() => {}}
+              onToggleStatus={() => {}}
+              onToggleEnabled={() => {}}
+              onToggleFrozen={() => {}}
+              onSelect={() => {}}
+              isDragging
+            />
+          ) : activeTask ? (
+            <TaskCard
+              task={activeTask}
+              getPriorityColor={getPriorityColor}
+              isDragging
+            />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
 
       {/* Board Dialog */}
       <BoardDialog
@@ -470,7 +552,7 @@ const BoardPage = () => {
         open={showTaskDialog}
         onOpenChange={setShowTaskDialog}
         projectId={projectId}
-        initialStatus="todo"
+        initialStatus={newTaskStatus}
       />
 
       {/* Task Details Dialog */}
