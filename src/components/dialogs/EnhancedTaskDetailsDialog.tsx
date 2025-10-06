@@ -1,15 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { format } from 'date-fns';
-import {
-  Calendar,
-  Clock,
-  User,
-  Tag,
-  Edit,
-  Trash2,
-  Flag
-} from 'lucide-react';
+import { Calendar, Clock, User, Tag, CreditCard as Edit, Trash2, Flag } from 'lucide-react';
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
