@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { Team } from '../../types';
-import { getUserSummaries } from '../../data/users';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TeamsState {
   teams: Team[];
@@ -9,96 +9,182 @@ interface TeamsState {
   error: string | null;
 }
 
-// Mock teams data
-const mockTeams: Team[] = [
-  {
-    id: '1',
-    name: 'Frontend Team',
-    description: 'Responsible for all user-facing applications and interfaces',
-    members: getUserSummaries(['2', '4', '6', '8']),
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z',
-  },
-  {
-    id: '2',
-    name: 'Backend Team',
-    description: 'Handles server-side development and API design',
-    members: getUserSummaries(['1', '3', '7']),
-    createdAt: '2024-01-16T10:00:00Z',
-    updatedAt: '2024-01-16T10:00:00Z',
-  },
-  {
-    id: '3',
-    name: 'DevOps Team',
-    description: 'Infrastructure, deployment, and system operations',
-    members: getUserSummaries(['1', '5', '7']),
-    createdAt: '2024-01-17T10:00:00Z',
-    updatedAt: '2024-01-17T10:00:00Z',
-  },
-];
-
-// Mock API calls - replace with real API endpoints
+// Fetch all teams
 export const fetchTeams = createAsyncThunk(
   'teams/fetchTeams',
-  async () => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return mockTeams;
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data, error } = await supabase
+        .from('teams')
+        .select(`
+          *,
+          team_members(
+            user_id,
+            profiles(id, name, email, avatar, role)
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return data.map((t: any) => ({
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        members: t.team_members?.map((tm: any) => ({
+          id: tm.profiles.id,
+          name: tm.profiles.name,
+          email: tm.profiles.email,
+          avatar: tm.profiles.avatar,
+          role: tm.profiles.role,
+        })) || [],
+        createdAt: t.created_at,
+        updatedAt: t.updated_at,
+      })) as Team[];
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
 export const fetchTeamById = createAsyncThunk(
   'teams/fetchTeamById',
-  async (teamId: string) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const team = mockTeams.find(t => t.id === teamId);
-    if (!team) {
-      throw new Error('Team not found');
+  async (teamId: string, { rejectWithValue }) => {
+    try {
+      const { data, error } = await supabase
+        .from('teams')
+        .select(`
+          *,
+          team_members(
+            user_id,
+            profiles(id, name, email, avatar, role)
+          )
+        `)
+        .eq('id', teamId)
+        .single();
+
+      if (error) throw error;
+
+      return {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        members: data.team_members?.map((tm: any) => ({
+          id: tm.profiles.id,
+          name: tm.profiles.name,
+          email: tm.profiles.email,
+          avatar: tm.profiles.avatar,
+          role: tm.profiles.role,
+        })) || [],
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      } as Team;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
     }
-    return team;
   }
 );
 
 export const createTeam = createAsyncThunk(
   'teams/createTeam',
-  async (teamData: Omit<Team, 'id' | 'createdAt' | 'updatedAt'>) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 600));
-    
-    const newTeam: Team = {
-      ...teamData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    return newTeam;
+  async (teamData: Omit<Team, 'id' | 'createdAt' | 'updatedAt'>, { rejectWithValue }) => {
+    try {
+      const { data, error } = await supabase
+        .from('teams')
+        .insert({
+          name: teamData.name,
+          description: teamData.description,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Insert team members if provided
+      if (teamData.members && teamData.members.length > 0) {
+        const memberInserts = teamData.members.map(member => ({
+          team_id: data.id,
+          user_id: member.id,
+        }));
+
+        await supabase.from('team_members').insert(memberInserts);
+      }
+
+      return {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        members: teamData.members || [],
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      } as Team;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
 export const updateTeam = createAsyncThunk(
   'teams/updateTeam',
-  async ({ id, ...updates }: Partial<Team> & { id: string }) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const updatedTeam = {
-      ...updates,
-      id,
-      updatedAt: new Date().toISOString(),
-    };
-    
-    return updatedTeam;
+  async ({ id, ...updates }: Partial<Team> & { id: string }, { rejectWithValue }) => {
+    try {
+      const { data, error } = await supabase
+        .from('teams')
+        .update({
+          name: updates.name,
+          description: updates.description,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update team members if provided
+      if (updates.members) {
+        // Delete existing members
+        await supabase.from('team_members').delete().eq('team_id', id);
+
+        // Insert new members
+        if (updates.members.length > 0) {
+          const memberInserts = updates.members.map(member => ({
+            team_id: id,
+            user_id: member.id,
+          }));
+
+          await supabase.from('team_members').insert(memberInserts);
+        }
+      }
+
+      return {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        members: updates.members,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      } as Team;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
 export const deleteTeam = createAsyncThunk(
   'teams/deleteTeam',
-  async (teamId: string) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return teamId;
+  async (teamId: string, { rejectWithValue }) => {
+    try {
+      const { error } = await supabase
+        .from('teams')
+        .delete()
+        .eq('id', teamId);
+
+      if (error) throw error;
+
+      return teamId;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 

@@ -1,63 +1,98 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { AuthState, User, LoginRequest, RegisterRequest } from '../../types';
-import apiClient from '../../api/client';
+import { supabase } from '@/integrations/supabase/client';
 
-// Mock API calls - replace with real API endpoints
+// Login user with Supabase
 export const loginUser = createAsyncThunk(
   'auth/login',
-  async (credentials: LoginRequest) => {
-    // Mock login - replace with actual API call
-    const mockUser: User = {
-      id: '1',
-      name: 'Alex Thompson',
-      email: credentials.email,
-      avatar: 'https://i.pravatar.cc/150?img=1',
-      role: 'admin',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    const mockToken = 'mock-jwt-token-' + Date.now();
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    return { user: mockUser, token: mockToken };
+  async (credentials: LoginRequest, { rejectWithValue }) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
+
+      if (error) throw error;
+      if (!data.user) throw new Error('No user data returned');
+
+      // Fetch user profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      const user: User = {
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        avatar: profile.avatar,
+        role: (profile.role as 'admin' | 'manager' | 'member') || 'member',
+        createdAt: profile.created_at,
+        updatedAt: profile.updated_at,
+      };
+
+      return { user, token: data.session?.access_token || '' };
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
+// Register new user with Supabase
 export const registerUser = createAsyncThunk(
   'auth/register',
-  async (userData: RegisterRequest) => {
-    // Mock registration - replace with actual API call
-    const mockUser: User = {
-      id: Date.now().toString(),
-      name: userData.name,
-      email: userData.email,
-      avatar: 'https://i.pravatar.cc/150?img=' + Math.floor(Math.random() * 50),
-      role: 'member',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    const mockToken = 'mock-jwt-token-' + Date.now();
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    return { user: mockUser, token: mockToken };
+  async (userData: RegisterRequest, { rejectWithValue }) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+        options: {
+          data: {
+            name: userData.name,
+          },
+          emailRedirectTo: `${window.location.origin}/`,
+        },
+      });
+
+      if (error) throw error;
+      if (!data.user) throw new Error('No user data returned');
+
+      // Fetch user profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      const user: User = {
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        avatar: profile.avatar,
+        role: (profile.role as 'admin' | 'manager' | 'member') || 'member',
+        createdAt: profile.created_at,
+        updatedAt: profile.updated_at,
+      };
+
+      return { user, token: data.session?.access_token || '' };
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
+// Logout user
 export const logoutUser = createAsyncThunk(
   'auth/logout',
   async () => {
-    // Clear local storage
+    await supabase.auth.signOut();
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_data');
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
   }
 );
 
