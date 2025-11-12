@@ -19,14 +19,12 @@ import {
   horizontalListSortingStrategy,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ArrowLeft, Plus, Filter, Users, Calendar, Settings, Layers, Edit, Trash2, Snowflake, Play, Pause, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Plus, Filter, Users, Calendar, Settings, Layers } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import BoardCard from '../components/board/BoardCard';
 import TaskCard from '../components/board/TaskCard';
 import TaskColumn from '../components/board/TaskColumn';
@@ -40,8 +38,15 @@ import { useToast } from '@/hooks/use-toast';
 import { RootState } from '../store';
 import { fetchProjectById } from '../store/slices/projectsSlice';
 import { fetchTasks, updateTaskStatus, moveTaskOptimistic } from '../store/slices/tasksSlice';
-import { fetchBoards, updateBoard, deleteBoard, reorderBoards, reorderBoardsOptimistic, createBoard } from '../store/slices/boardsSlice';
+import { fetchBoards, updateBoard, deleteBoard, reorderBoards, reorderBoardsOptimistic } from '../store/slices/boardsSlice';
 import { Board, Task, TaskStatus } from '../types';
+
+const TASK_COLUMNS = [
+  { id: 'todo', title: 'To Do', color: 'bg-slate-500' },
+  { id: 'in-progress', title: 'In Progress', color: 'bg-blue-500' },
+  { id: 'review', title: 'Review', color: 'bg-amber-500' },
+  { id: 'done', title: 'Done', color: 'bg-green-500' },
+] as const;
 
 const BoardPage = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -64,8 +69,6 @@ const BoardPage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [showAssignees, setShowAssignees] = useState(false);
   const [newTaskStatus, setNewTaskStatus] = useState<TaskStatus>('todo');
-  const [editingBoardName, setEditingBoardName] = useState<string | null>(null);
-  const [tempBoardName, setTempBoardName] = useState('');
   const [filters, setFilters] = useState<FilterOptions>({
     status: [],
     priority: [],
@@ -102,7 +105,6 @@ const BoardPage = () => {
   }
 
   const canManageBoards = user?.role === 'admin' || user?.role === 'manager';
-  const enabledBoards = boards.filter(board => board.isEnabled);
 
   const getTasksByBoard = (boardId: string) => {
     return tasks.filter(task => task.boardId === boardId || (!task.boardId && boardId === boards[0]?.id));
@@ -203,17 +205,6 @@ const BoardPage = () => {
       
       const task = tasks.find(t => t.id === taskId);
       if (task && task.status !== newStatus) {
-        // Check if target board is frozen
-        const targetBoard = boards.find(b => b.id === task.boardId);
-        if (targetBoard?.isFrozen) {
-          toast({
-            title: "Board Frozen",
-            description: "Cannot move tasks in a frozen board.",
-            variant: "destructive",
-          });
-          return;
-        }
-        
         // Update on server
         dispatch(updateTaskStatus({ taskId, status: newStatus }) as any);
       }
@@ -232,56 +223,9 @@ const BoardPage = () => {
     setSelectedBoard(board);
   };
 
-  const handleCreateBoard = () => {
-    setEditingBoard(null);
-    setShowBoardDialog(true);
-  };
-
   const handleEditBoard = (board: Board) => {
     setEditingBoard(board);
     setShowBoardDialog(true);
-  };
-
-  const handleStartRename = (board: Board) => {
-    setEditingBoardName(board.id);
-    setTempBoardName(board.name);
-  };
-
-  const handleSaveRename = async (boardId: string) => {
-    if (!tempBoardName.trim()) {
-      toast({
-        title: "Error",
-        description: "Board name cannot be empty.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      await dispatch(updateBoard({
-        id: boardId,
-        name: tempBoardName.trim()
-      }) as any);
-      
-      toast({
-        title: "Board Renamed",
-        description: "Board name updated successfully.",
-      });
-      
-      setEditingBoardName(null);
-      setTempBoardName('');
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to rename board.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleCancelRename = () => {
-    setEditingBoardName(null);
-    setTempBoardName('');
   };
 
   const handleDeleteBoard = async () => {
@@ -341,12 +285,6 @@ const BoardPage = () => {
         title: "Board Updated",
         description: `Board ${board.isEnabled ? 'disabled' : 'enabled'} successfully.`,
       });
-      
-      // If disabling the currently selected board, switch to another one
-      if (board.isEnabled && selectedBoard?.id === board.id) {
-        const otherEnabledBoard = boards.find(b => b.id !== board.id && b.isEnabled);
-        setSelectedBoard(otherEnabledBoard || null);
-      }
     } catch (error) {
       toast({
         title: "Error",
@@ -387,36 +325,6 @@ const BoardPage = () => {
     }
     setNewTaskStatus(status);
     setShowTaskDialog(true);
-  };
-
-  const handleTaskMove = (taskId: string, newStatus: TaskStatus) => {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
-
-    // Check if source or target board is frozen
-    const sourceBoard = boards.find(b => b.id === task.boardId);
-    const targetBoard = selectedBoard;
-
-    if (sourceBoard?.isFrozen || targetBoard?.isFrozen) {
-      toast({
-        title: "Board Frozen",
-        description: "Cannot move tasks in a frozen board.",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    return true;
-  };
-
-  // Get the task columns for the selected board
-  const getTaskColumns = () => {
-    return [
-      { id: 'todo', title: 'To Do', color: 'bg-slate-500' },
-      { id: 'in-progress', title: 'In Progress', color: 'bg-blue-500' },
-      { id: 'review', title: 'Review', color: 'bg-amber-500' },
-      { id: 'done', title: 'Done', color: 'bg-green-500' },
-    ];
   };
 
   if (isLoading) {
@@ -462,7 +370,7 @@ const BoardPage = () => {
               Assignees
             </Button>
             {canManageBoards && (
-              <Button onClick={handleCreateBoard}>
+              <Button onClick={() => setShowBoardDialog(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 New Board
               </Button>
@@ -500,7 +408,7 @@ const BoardPage = () => {
                       Create your first board to start organizing tasks
                     </p>
                     {canManageBoards && (
-                      <Button className="mt-4" onClick={handleCreateBoard}>
+                      <Button className="mt-4" onClick={() => setShowBoardDialog(true)}>
                         <Plus className="mr-2 h-4 w-4" />
                         Create Board
                       </Button>
@@ -542,143 +450,15 @@ const BoardPage = () => {
           {selectedBoard && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-4 h-4 rounded-full ${selectedBoard.color}`} />
-                    {editingBoardName === selectedBoard.id ? (
-                      <div className="flex items-center gap-2">
-                        <Input
-                          value={tempBoardName}
-                          onChange={(e) => setTempBoardName(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              handleSaveRename(selectedBoard.id);
-                            } else if (e.key === 'Escape') {
-                              handleCancelRename();
-                            }
-                          }}
-                          className="w-48"
-                          autoFocus
-                        />
-                        <Button size="sm" onClick={() => handleSaveRename(selectedBoard.id)}>
-                          Save
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={handleCancelRename}>
-                          Cancel
-                        </Button>
-                      </div>
-                    ) : (
-                      <h2 className="text-xl font-semibold flex items-center gap-2">
-                        {selectedBoard.name} - Kanban Board
-                        {canManageBoards && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleStartRename(selectedBoard)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </h2>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    {selectedBoard.isFrozen && (
-                      <Badge variant="outline" className="flex items-center gap-1">
-                        <Snowflake className="h-3 w-3" />
-                        Read Only
-                      </Badge>
-                    )}
-                    {!selectedBoard.isEnabled && (
-                      <Badge variant="secondary">
-                        Disabled
-                      </Badge>
-                    )}
-                    {selectedBoard.status === 'inactive' && (
-                      <Badge variant="outline">
-                        Inactive
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                
-                {canManageBoards && (
-                  <div className="flex items-center gap-2">
-                    <Button onClick={handleCreateBoard}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Board
-                    </Button>
-                    
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline">
-                          <Settings className="mr-2 h-4 w-4" />
-                          Board Actions
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEditBoard(selectedBoard)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit Board
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleStartRename(selectedBoard)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Rename Board
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleToggleBoardStatus(selectedBoard)}>
-                          {selectedBoard.status === 'active' ? (
-                            <>
-                              <Pause className="mr-2 h-4 w-4" />
-                              Set Inactive
-                            </>
-                          ) : (
-                            <>
-                              <Play className="mr-2 h-4 w-4" />
-                              Set Active
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleToggleBoardEnabled(selectedBoard)}>
-                          {selectedBoard.isEnabled ? (
-                            <>
-                              <EyeOff className="mr-2 h-4 w-4" />
-                              Disable Board
-                            </>
-                          ) : (
-                            <>
-                              <Eye className="mr-2 h-4 w-4" />
-                              Enable Board
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleToggleBoardFrozen(selectedBoard)}>
-                          {selectedBoard.isFrozen ? (
-                            <>
-                              <Play className="mr-2 h-4 w-4" />
-                              Unfreeze Board
-                            </>
-                          ) : (
-                            <>
-                              <Snowflake className="mr-2 h-4 w-4" />
-                              Freeze Board
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          onClick={() => setDeletingBoard(selectedBoard)}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete Board
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                )}
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <div className={`w-4 h-4 rounded-full ${selectedBoard.color}`} />
+                  {selectedBoard.name} - Kanban Board
+                  {selectedBoard.isFrozen && (
+                    <Badge variant="outline" className="ml-2">
+                      Read Only
+                    </Badge>
+                  )}
+                </h2>
               </div>
 
               {selectedBoard.description && (
@@ -688,10 +468,10 @@ const BoardPage = () => {
               {/* Kanban Columns */}
               <div className="grid grid-cols-4 gap-6 min-h-[600px]">
                 <SortableContext
-                  items={getTaskColumns().map(col => col.id)}
+                  items={TASK_COLUMNS.map(col => col.id)}
                   strategy={horizontalListSortingStrategy}
                 >
-                  {getTaskColumns().map((column) => {
+                  {TASK_COLUMNS.map((column) => {
                     const columnTasks = getTasksByStatus(column.id as TaskStatus, selectedBoard.id);
                     
                     return (
@@ -715,14 +495,6 @@ const BoardPage = () => {
                                 task={task}
                                 getPriorityColor={getPriorityColor}
                                 onClick={() => {
-                                  if (selectedBoard.isFrozen) {
-                                    toast({
-                                      title: "Board Frozen",
-                                      description: "Tasks cannot be edited in a frozen board.",
-                                      variant: "destructive",
-                                    });
-                                    return;
-                                  }
                                   setSelectedTask(task);
                                   setShowTaskDetails(true);
                                 }}

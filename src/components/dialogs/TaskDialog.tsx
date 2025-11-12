@@ -28,17 +28,20 @@ interface TaskDialogProps {
   task?: Task | null;
   projectId?: string;
   initialStatus?: TaskStatus;
+  boardId?: string;
 }
 
-const TaskDialog = ({ open, onOpenChange, task, projectId, initialStatus = 'todo' }: TaskDialogProps) => {
+const TaskDialog = ({ open, onOpenChange, task, projectId, initialStatus = 'todo', boardId }: TaskDialogProps) => {
   const dispatch = useDispatch();
   const { toast } = useToast();
   const { isLoading } = useSelector((state: RootState) => state.tasks);
+  const { boards } = useSelector((state: RootState) => state.boards);
   
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
   const [dueDate, setDueDate] = useState<Date | undefined>();
+  const [selectedBoard, setSelectedBoard] = useState<string>(boardId || '');
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm({
     defaultValues: {
@@ -62,6 +65,7 @@ const TaskDialog = ({ open, onOpenChange, task, projectId, initialStatus = 'todo
       setSelectedAssignees(task.assignees.map(a => a.id));
       setTags(task.tags);
       setDueDate(task.dueDate ? new Date(task.dueDate) : undefined);
+      setSelectedBoard(task.boardId || '');
     } else {
       reset({
         title: '',
@@ -73,15 +77,16 @@ const TaskDialog = ({ open, onOpenChange, task, projectId, initialStatus = 'todo
       setSelectedAssignees([]);
       setTags([]);
       setDueDate(undefined);
+      setSelectedBoard(boardId || boards.find(b => b.projectId === projectId)?.id || '');
     }
-  }, [task, initialStatus, reset]);
+  }, [task, initialStatus, reset, boardId, boards, projectId]);
 
   const onSubmit = async (data: any) => {
     try {
       const taskData = {
         ...data,
         projectId: projectId || task?.projectId,
-        boardId: selectedBoard?.id,
+        boardId: selectedBoard,
         assignees: users.filter(user => selectedAssignees.includes(user.id))
           .map(({ id, name, email, avatar, role }) => ({ id, name, email, avatar, role })),
         tags,
@@ -132,6 +137,8 @@ const TaskDialog = ({ open, onOpenChange, task, projectId, initialStatus = 'todo
     setTags(prev => prev.filter(tag => tag !== tagToRemove));
   };
 
+  const projectBoards = boards.filter(board => board.projectId === projectId);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -169,7 +176,26 @@ const TaskDialog = ({ open, onOpenChange, task, projectId, initialStatus = 'todo
               />
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label>Board</Label>
+                <Select value={selectedBoard} onValueChange={setSelectedBoard}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select board" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projectBoards.map((board) => (
+                      <SelectItem key={board.id} value={board.id}>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-3 h-3 rounded-full ${board.color}`} />
+                          {board.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
               <div className="space-y-2">
                 <Label>Status</Label>
                 <Select value={watch('status')} onValueChange={(value) => setValue('status', value as TaskStatus)}>

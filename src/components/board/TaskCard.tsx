@@ -12,9 +12,10 @@ interface TaskCardProps {
   getPriorityColor: (priority: Task['priority']) => string;
   isDragging?: boolean;
   onClick?: () => void;
+  isFrozen?: boolean;
 }
 
-const TaskCard = ({ task, getPriorityColor, isDragging = false, onClick }: TaskCardProps) => {
+const TaskCard = ({ task, getPriorityColor, isDragging = false, onClick, isFrozen = false }: TaskCardProps) => {
   const {
     attributes,
     listeners,
@@ -28,6 +29,7 @@ const TaskCard = ({ task, getPriorityColor, isDragging = false, onClick }: TaskC
       type: 'task',
       task,
     },
+    disabled: isFrozen,
   });
 
   const style = {
@@ -40,8 +42,9 @@ const TaskCard = ({ task, getPriorityColor, isDragging = false, onClick }: TaskC
   return (
     <div ref={setNodeRef} style={style}>
       <Card 
-        className={`cursor-pointer hover:shadow-md transition-all duration-200 group ${
+        className={`transition-all duration-200 group ${
           isBeingDragged ? 'opacity-50 rotate-2 shadow-xl' : ''
+        } ${isFrozen ? 'cursor-default opacity-75' : 'cursor-pointer hover:shadow-md'
         }`}
         onClick={onClick}
       >
@@ -54,13 +57,15 @@ const TaskCard = ({ task, getPriorityColor, isDragging = false, onClick }: TaskC
                 <Badge variant={getPriorityColor(task.priority) as any} className="text-xs">
                   {task.priority}
                 </Badge>
-                <div 
-                  {...attributes} 
-                  {...listeners}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
-                >
-                  <GripVertical className="h-3 w-3 text-muted-foreground" />
-                </div>
+                {!isFrozen && (
+                  <div 
+                    {...attributes} 
+                    {...listeners}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+                  >
+                    <GripVertical className="h-3 w-3 text-muted-foreground" />
+                  </div>
+                )}
               </div>
             </div>
 

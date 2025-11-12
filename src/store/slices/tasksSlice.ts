@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { Task } from '../../types';
-import { tasks as mockTasks, getTasksByProject } from '../../data/tasks';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TasksState {
   tasks: Task[];
@@ -9,84 +9,260 @@ interface TasksState {
   error: string | null;
 }
 
-// Mock API calls - replace with real API endpoints
+// Fetch all tasks
 export const fetchTasks = createAsyncThunk(
   'tasks/fetchTasks',
-  async (projectId?: string) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    if (projectId) {
-      return getTasksByProject(projectId);
+  async (projectId: string | undefined, { rejectWithValue }) => {
+    try {
+      let query = supabase
+        .from('tasks')
+        .select(`
+          *,
+          task_assignees(user_id, profiles(id, name, email, avatar, role))
+        `)
+        .order('created_at', { ascending: false });
+
+      if (projectId) {
+        query = query.eq('project_id', projectId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      return data.map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        description: t.description,
+        status: t.status,
+        priority: t.priority,
+        projectId: t.project_id,
+        boardId: t.board_id,
+        assignees: t.task_assignees?.map((a: any) => ({
+          id: a.profiles.id,
+          name: a.profiles.name,
+          email: a.profiles.email,
+          avatar: a.profiles.avatar,
+          role: a.profiles.role,
+        })) || [],
+        createdBy: t.created_by,
+        dueDate: t.due_date,
+        estimatedHours: t.estimated_hours,
+        tags: t.tags || [],
+        commentsCount: 0,
+        createdAt: t.created_at,
+        updatedAt: t.updated_at,
+      })) as Task[];
+    } catch (error: any) {
+      return rejectWithValue(error.message);
     }
-    
-    return mockTasks;
   }
 );
 
+// Fetch task by ID
 export const fetchTaskById = createAsyncThunk(
   'tasks/fetchTaskById',
-  async (taskId: string) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const task = mockTasks.find(t => t.id === taskId);
-    if (!task) {
-      throw new Error('Task not found');
+  async (taskId: string, { rejectWithValue }) => {
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select(`
+          *,
+          task_assignees(user_id, profiles(id, name, email, avatar, role))
+        `)
+        .eq('id', taskId)
+        .single();
+
+      if (error) throw error;
+
+      return {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        status: data.status,
+        priority: data.priority,
+        projectId: data.project_id,
+        boardId: data.board_id,
+        assignees: data.task_assignees?.map((a: any) => ({
+          id: a.profiles.id,
+          name: a.profiles.name,
+          email: a.profiles.email,
+          avatar: a.profiles.avatar,
+          role: a.profiles.role,
+        })) || [],
+        createdBy: data.created_by,
+        dueDate: data.due_date,
+        estimatedHours: data.estimated_hours,
+        tags: data.tags || [],
+        commentsCount: 0,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      } as Task;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
     }
-    return task;
   }
 );
 
+// Create task
 export const createTask = createAsyncThunk(
   'tasks/createTask',
-  async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'commentsCount'>) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 600));
-    
-    const newTask: Task = {
-      ...taskData,
-      id: Date.now().toString(),
-      commentsCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    return newTask;
+  async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'commentsCount'>, { rejectWithValue }) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert({
+          title: taskData.title,
+          description: taskData.description,
+          status: taskData.status || 'todo',
+          priority: taskData.priority || 'medium',
+          project_id: taskData.projectId,
+          board_id: taskData.boardId,
+          created_by: user.id,
+          due_date: taskData.dueDate,
+          estimated_hours: taskData.estimatedHours,
+          tags: taskData.tags || [],
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Insert assignees if provided
+      if (taskData.assignees && taskData.assignees.length > 0) {
+        const assigneeInserts = taskData.assignees.map(assignee => ({
+          task_id: data.id,
+          user_id: assignee.id,
+        }));
+
+        await supabase.from('task_assignees').insert(assigneeInserts);
+      }
+
+      return {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        status: data.status,
+        priority: data.priority,
+        projectId: data.project_id,
+        boardId: data.board_id,
+        assignees: taskData.assignees || [],
+        createdBy: data.created_by,
+        dueDate: data.due_date,
+        estimatedHours: data.estimated_hours,
+        tags: data.tags || [],
+        commentsCount: 0,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      } as Task;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
+// Update task
 export const updateTask = createAsyncThunk(
   'tasks/updateTask',
-  async ({ id, ...updates }: Partial<Task> & { id: string }) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 400));
-    
-    const updatedTask = {
-      ...updates,
-      id,
-      updatedAt: new Date().toISOString(),
-    };
-    
-    return updatedTask;
+  async ({ id, ...updates }: Partial<Task> & { id: string }, { rejectWithValue }) => {
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .update({
+          title: updates.title,
+          description: updates.description,
+          status: updates.status,
+          priority: updates.priority,
+          board_id: updates.boardId,
+          due_date: updates.dueDate,
+          estimated_hours: updates.estimatedHours,
+          tags: updates.tags,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update assignees if provided
+      if (updates.assignees) {
+        // Delete existing assignees
+        await supabase.from('task_assignees').delete().eq('task_id', id);
+
+        // Insert new assignees
+        if (updates.assignees.length > 0) {
+          const assigneeInserts = updates.assignees.map(assignee => ({
+            task_id: id,
+            user_id: assignee.id,
+          }));
+
+          await supabase.from('task_assignees').insert(assigneeInserts);
+        }
+      }
+
+      return {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        status: data.status,
+        priority: data.priority,
+        projectId: data.project_id,
+        boardId: data.board_id,
+        assignees: updates.assignees,
+        createdBy: data.created_by,
+        dueDate: data.due_date,
+        estimatedHours: data.estimated_hours,
+        tags: data.tags || [],
+        commentsCount: 0,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      } as Task;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
+// Delete task
 export const deleteTask = createAsyncThunk(
   'tasks/deleteTask',
-  async (taskId: string) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 400));
-    return taskId;
+  async (taskId: string, { rejectWithValue }) => {
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      return taskId;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
+// Update task status
 export const updateTaskStatus = createAsyncThunk(
   'tasks/updateTaskStatus',
-  async ({ taskId, status }: { taskId: string; status: Task['status'] }) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    return { taskId, status, updatedAt: new Date().toISOString() };
+  async ({ taskId, status }: { taskId: string; status: Task['status'] }, { rejectWithValue }) => {
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .update({ status })
+        .eq('id', taskId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return { taskId, status, updatedAt: data.updated_at };
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 

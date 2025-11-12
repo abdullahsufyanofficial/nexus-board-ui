@@ -1,6 +1,10 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { Board } from '../../types';
-import { boards as mockBoards, getBoardsByProject } from '../../data/boards';
+import { getBoardsByProject } from '../../data/boards';
+import boardsData from '../../data/boards.json';
+
+// In-memory storage for boards (simulates database)
+let boardsStorage: Board[] = [...(boardsData as Board[])];
 
 interface BoardsState {
   boards: Board[];
@@ -14,7 +18,9 @@ export const fetchBoards = createAsyncThunk(
   'boards/fetchBoards',
   async (projectId: string) => {
     await new Promise(resolve => setTimeout(resolve, 300));
-    return getBoardsByProject(projectId);
+    return boardsStorage
+      .filter(board => board.projectId === projectId)
+      .sort((a, b) => a.position - b.position);
   }
 );
 
@@ -23,7 +29,7 @@ export const createBoard = createAsyncThunk(
   async (boardData: Omit<Board, 'id' | 'createdAt' | 'updatedAt' | 'position'>) => {
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    const existingBoards = getBoardsByProject(boardData.projectId);
+    const existingBoards = boardsStorage.filter(b => b.projectId === boardData.projectId);
     const newBoard: Board = {
       ...boardData,
       id: `board-${Date.now()}`,
@@ -32,6 +38,7 @@ export const createBoard = createAsyncThunk(
       updatedAt: new Date().toISOString(),
     };
     
+    boardsStorage.push(newBoard);
     return newBoard;
   }
 );
@@ -40,6 +47,15 @@ export const updateBoard = createAsyncThunk(
   'boards/updateBoard',
   async ({ id, ...updates }: Partial<Board> & { id: string }) => {
     await new Promise(resolve => setTimeout(resolve, 400));
+    
+    const boardIndex = boardsStorage.findIndex(b => b.id === id);
+    if (boardIndex !== -1) {
+      boardsStorage[boardIndex] = {
+        ...boardsStorage[boardIndex],
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      };
+    }
     
     return {
       ...updates,
@@ -53,6 +69,7 @@ export const deleteBoard = createAsyncThunk(
   'boards/deleteBoard',
   async (boardId: string) => {
     await new Promise(resolve => setTimeout(resolve, 400));
+    boardsStorage = boardsStorage.filter(b => b.id !== boardId);
     return boardId;
   }
 );
@@ -61,6 +78,16 @@ export const reorderBoards = createAsyncThunk(
   'boards/reorderBoards',
   async (boardIds: string[]) => {
     await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Update positions in storage
+    boardIds.forEach((id, index) => {
+      const boardIndex = boardsStorage.findIndex(b => b.id === id);
+      if (boardIndex !== -1) {
+        boardsStorage[boardIndex].position = index;
+        boardsStorage[boardIndex].updatedAt = new Date().toISOString();
+      }
+    });
+    
     return boardIds;
   }
 );
