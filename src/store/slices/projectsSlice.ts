@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { Project } from '../../types';
-import { supabase } from '@/integrations/supabase/client';
+import { projects as mockProjects } from '../../data/projects';
 
 interface ProjectsState {
   projects: Project[];
@@ -9,174 +9,68 @@ interface ProjectsState {
   error: string | null;
 }
 
-// Fetch all projects
+// Mock API calls - replace with real API endpoints
 export const fetchProjects = createAsyncThunk(
   'projects/fetchProjects',
-  async (_, { rejectWithValue }) => {
-    try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      return data.map((p: any) => ({
-        id: p.id,
-        name: p.name,
-        description: p.description,
-        status: p.status,
-        visibility: 'private' as const,
-        progress: 0,
-        members: [],
-        tags: [],
-        startDate: p.start_date,
-        endDate: p.end_date,
-        createdAt: p.created_at,
-        updatedAt: p.updated_at,
-        createdBy: p.owner_id,
-      })) as Project[];
-    } catch (error: any) {
-      return rejectWithValue(error.message);
-    }
+  async () => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return mockProjects;
   }
 );
 
-// Fetch project by ID
 export const fetchProjectById = createAsyncThunk(
   'projects/fetchProjectById',
-  async (projectId: string, { rejectWithValue }) => {
-    try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', projectId)
-        .single();
-
-      if (error) throw error;
-
-      return {
-        id: data.id,
-        name: data.name,
-        description: data.description,
-        status: data.status,
-        visibility: 'private' as const,
-        progress: 0,
-        members: [],
-        tags: [],
-        startDate: data.start_date,
-        endDate: data.end_date,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        createdBy: data.owner_id,
-      } as Project;
-    } catch (error: any) {
-      return rejectWithValue(error.message);
+  async (projectId: string) => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const project = mockProjects.find(p => p.id === projectId);
+    if (!project) {
+      throw new Error('Project not found');
     }
+    return project;
   }
 );
 
-// Create project
 export const createProject = createAsyncThunk(
   'projects/createProject',
-  async (projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>, { rejectWithValue }) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { data, error } = await supabase
-        .from('projects')
-        .insert({
-          name: projectData.name,
-          description: projectData.description,
-          owner_id: user.id,
-          status: projectData.status || 'active',
-          start_date: projectData.startDate,
-          end_date: projectData.endDate,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      return {
-        id: data.id,
-        name: data.name,
-        description: data.description,
-        status: data.status,
-        visibility: 'private' as const,
-        progress: 0,
-        members: [],
-        tags: [],
-        startDate: data.start_date,
-        endDate: data.end_date,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        createdBy: data.owner_id,
-      } as Project;
-    } catch (error: any) {
-      return rejectWithValue(error.message);
-    }
+  async (projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    const newProject: Project = {
+      ...projectData,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    
+    return newProject;
   }
 );
 
-// Update project
 export const updateProject = createAsyncThunk(
   'projects/updateProject',
-  async ({ id, ...updates }: Partial<Project> & { id: string }, { rejectWithValue }) => {
-    try {
-      const { data, error } = await supabase
-        .from('projects')
-        .update({
-          name: updates.name,
-          description: updates.description,
-          status: updates.status,
-          start_date: updates.startDate,
-          end_date: updates.endDate,
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      return {
-        id: data.id,
-        name: data.name,
-        description: data.description,
-        status: data.status,
-        visibility: updates.visibility || 'private' as const,
-        progress: updates.progress || 0,
-        members: updates.members || [],
-        tags: updates.tags || [],
-        startDate: data.start_date,
-        endDate: data.end_date,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        createdBy: data.owner_id,
-      } as Project;
-    } catch (error: any) {
-      return rejectWithValue(error.message);
-    }
+  async ({ id, ...updates }: Partial<Project> & { id: string }) => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const updatedProject = {
+      ...updates,
+      id,
+      updatedAt: new Date().toISOString(),
+    };
+    
+    return updatedProject;
   }
 );
 
-// Delete project
 export const deleteProject = createAsyncThunk(
   'projects/deleteProject',
-  async (projectId: string, { rejectWithValue }) => {
-    try {
-      const { error } = await supabase
-        .from('projects')
-        .delete()
-        .eq('id', projectId);
-
-      if (error) throw error;
-
-      return projectId;
-    } catch (error: any) {
-      return rejectWithValue(error.message);
-    }
+  async (projectId: string) => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return projectId;
   }
 );
 

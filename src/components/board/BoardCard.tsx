@@ -183,14 +183,10 @@ const BoardCard = ({
             
             <div className="flex items-center gap-1">
               {board.isFrozen && (
-                <div title="Frozen">
-                  <Snowflake className="h-4 w-4 text-blue-500" />
-                </div>
+                <Snowflake className="h-4 w-4 text-blue-500" title="Frozen" />
               )}
               {!board.isEnabled && (
-                <div title="Disabled">
-                  <EyeOff className="h-4 w-4 text-muted-foreground" />
-                </div>
+                <EyeOff className="h-4 w-4 text-muted-foreground" title="Disabled" />
               )}
             </div>
           </div>

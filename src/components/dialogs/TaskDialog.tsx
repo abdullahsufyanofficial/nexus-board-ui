@@ -81,7 +81,7 @@ const TaskDialog = ({ open, onOpenChange, task, projectId, initialStatus = 'todo
       const taskData = {
         ...data,
         projectId: projectId || task?.projectId,
-        boardId: task?.boardId,
+        boardId: selectedBoard?.id,
         assignees: users.filter(user => selectedAssignees.includes(user.id))
           .map(({ id, name, email, avatar, role }) => ({ id, name, email, avatar, role })),
         tags,

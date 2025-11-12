@@ -12,9 +12,10 @@ interface TaskColumnProps {
   children: React.ReactNode;
   onAddTask?: () => void;
   canAddTask?: boolean;
+  isFrozen?: boolean;
 }
 
-const TaskColumn = ({ id, title, count, color, children, onAddTask, canAddTask = true }: TaskColumnProps) => {
+const TaskColumn = ({ id, title, count, color, children, onAddTask, canAddTask = true, isFrozen = false }: TaskColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id,
     data: {
@@ -25,7 +26,8 @@ const TaskColumn = ({ id, title, count, color, children, onAddTask, canAddTask =
 
   return (
     <Card className={`flex flex-col h-full transition-all duration-200 ${
-      isOver ? 'ring-2 ring-primary bg-primary/5' : ''
+      isOver && !isFrozen ? 'ring-2 ring-primary bg-primary/5' : ''
+    } ${isFrozen ? 'opacity-75' : ''
     }`}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
@@ -40,6 +42,7 @@ const TaskColumn = ({ id, title, count, color, children, onAddTask, canAddTask =
               size="icon" 
               className="h-6 w-6 hover:bg-primary/10" 
               onClick={onAddTask}
+              disabled={isFrozen}
             >
               <Plus className="h-4 w-4" />
             </Button>

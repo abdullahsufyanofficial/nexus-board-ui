@@ -78,14 +78,6 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
   createdBy: string;
-  // New advanced features
-  dependencies?: string[]; // Task IDs this task depends on
-  timeEntries?: TimeEntry[];
-  comments?: Comment[];
-  recurring?: RecurringConfig;
-  templateId?: string;
-  automationRules?: AutomationRule[];
-  customFields?: Record<string, any>;
 }
 
 // Board Types
@@ -127,108 +119,13 @@ export interface Team {
 // Activity Types
 export interface Activity {
   id: string;
-  type: 'task_created' | 'task_updated' | 'project_created' | 'user_joined' | 'comment_added' | 'file_uploaded' | 'time_logged';
+  type: 'task_created' | 'task_updated' | 'project_created' | 'user_joined' | 'comment_added';
   title: string;
   description: string;
   user: UserSummary;
   projectId?: string;
   taskId?: string;
   createdAt: string;
-  metadata?: Record<string, any>;
-}
-
-// Advanced Feature Types
-
-// 1. Time Tracking
-export interface TimeEntry {
-  id: string;
-  taskId: string;
-  userId: string;
-  startTime: string;
-  endTime?: string;
-  duration: number; // minutes
-  description?: string;
-  createdAt: string;
-}
-
-// 2. Comments
-export interface Comment {
-  id: string;
-  taskId: string;
-  userId: string;
-  user: UserSummary;
-  content: string;
-  mentions?: string[]; // User IDs mentioned
-  attachments?: Attachment[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-// 3. Recurring Tasks
-export interface RecurringConfig {
-  frequency: 'daily' | 'weekly' | 'monthly';
-  interval: number; // Every X days/weeks/months
-  endDate?: string;
-  lastCreated?: string;
-}
-
-// 4. Task Templates
-export interface TaskTemplate {
-  id: string;
-  name: string;
-  description?: string;
-  priority: TaskPriority;
-  estimatedHours?: number;
-  tags: string[];
-  checklistItems?: string[];
-  customFields?: Record<string, any>;
-  createdBy: string;
-  createdAt: string;
-}
-
-// 5. Automation Rules
-export interface AutomationRule {
-  id: string;
-  name: string;
-  trigger: 'status_change' | 'assignee_change' | 'due_date' | 'created';
-  conditions: AutomationCondition[];
-  actions: AutomationAction[];
-  enabled: boolean;
-}
-
-export interface AutomationCondition {
-  field: string;
-  operator: 'equals' | 'contains' | 'greater_than' | 'less_than';
-  value: any;
-}
-
-export interface AutomationAction {
-  type: 'assign' | 'add_tag' | 'set_priority' | 'notify' | 'move_to_board';
-  value: any;
-}
-
-// 6. Workload
-export interface WorkloadData {
-  userId: string;
-  user: UserSummary;
-  totalTasks: number;
-  totalHours: number;
-  tasksByPriority: Record<TaskPriority, number>;
-  tasksByStatus: Record<TaskStatus, number>;
-}
-
-// 7. Search
-export interface SearchFilters {
-  query?: string;
-  projectIds?: string[];
-  assigneeIds?: string[];
-  priorities?: TaskPriority[];
-  statuses?: TaskStatus[];
-  tags?: string[];
-  dateRange?: {
-    start: string;
-    end: string;
-  };
 }
 
 // API Response Types
@@ -254,8 +151,6 @@ export interface DashboardStats {
   openTasks: number;
   overdueTasks: number;
   teamUtilization: number;
-  recentActivities: Activity[];
-  upcomingDeadlines: Task[];
 }
 
 // Chart Data Types
