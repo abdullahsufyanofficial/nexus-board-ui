@@ -18,36 +18,156 @@ export type Database = {
         Row: {
           action: string
           created_at: string | null
+          description: string | null
           entity_id: string
           entity_type: string
           id: string
           metadata: Json | null
+          project_id: string | null
+          task_id: string | null
+          title: string | null
+          type: string | null
           user_id: string
         }
         Insert: {
           action: string
           created_at?: string | null
+          description?: string | null
           entity_id: string
           entity_type: string
           id?: string
           metadata?: Json | null
+          project_id?: string | null
+          task_id?: string | null
+          title?: string | null
+          type?: string | null
           user_id: string
         }
         Update: {
           action?: string
           created_at?: string | null
+          description?: string | null
           entity_id?: string
           entity_type?: string
           id?: string
           metadata?: Json | null
+          project_id?: string | null
+          task_id?: string | null
+          title?: string | null
+          type?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "activities_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "activities_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attachments: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          size: number
+          task_id: string
+          type: string
+          uploaded_at: string
+          uploaded_by: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          size: number
+          task_id: string
+          type: string
+          uploaded_at?: string
+          uploaded_by: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          size?: number
+          task_id?: string
+          type?: string
+          uploaded_at?: string
+          uploaded_by?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attachments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_rules: {
+        Row: {
+          actions: Json | null
+          conditions: Json | null
+          created_at: string
+          created_by: string
+          enabled: boolean | null
+          id: string
+          name: string
+          project_id: string | null
+          trigger: string
+          updated_at: string
+        }
+        Insert: {
+          actions?: Json | null
+          conditions?: Json | null
+          created_at?: string
+          created_by: string
+          enabled?: boolean | null
+          id?: string
+          name: string
+          project_id?: string | null
+          trigger: string
+          updated_at?: string
+        }
+        Update: {
+          actions?: Json | null
+          conditions?: Json | null
+          created_at?: string
+          created_by?: string
+          enabled?: boolean | null
+          id?: string
+          name?: string
+          project_id?: string | null
+          trigger?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_rules_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -95,6 +215,7 @@ export type Database = {
           content: string
           created_at: string | null
           id: string
+          mentions: string[] | null
           task_id: string
           updated_at: string | null
           user_id: string
@@ -103,6 +224,7 @@ export type Database = {
           content: string
           created_at?: string | null
           id?: string
+          mentions?: string[] | null
           task_id: string
           updated_at?: string | null
           user_id: string
@@ -111,6 +233,7 @@ export type Database = {
           content?: string
           created_at?: string | null
           id?: string
+          mentions?: string[] | null
           task_id?: string
           updated_at?: string | null
           user_id?: string
@@ -277,6 +400,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      task_templates: {
+        Row: {
+          checklist: Json | null
+          checklist_items: Json | null
+          created_at: string
+          created_by: string
+          custom_fields: Json | null
+          default_assignee: string | null
+          description: string | null
+          estimated_hours: number | null
+          id: string
+          name: string
+          priority: string | null
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          checklist?: Json | null
+          checklist_items?: Json | null
+          created_at?: string
+          created_by: string
+          custom_fields?: Json | null
+          default_assignee?: string | null
+          description?: string | null
+          estimated_hours?: number | null
+          id?: string
+          name: string
+          priority?: string | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          checklist?: Json | null
+          checklist_items?: Json | null
+          created_at?: string
+          created_by?: string
+          custom_fields?: Json | null
+          default_assignee?: string | null
+          description?: string | null
+          estimated_hours?: number | null
+          id?: string
+          name?: string
+          priority?: string | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       tasks: {
         Row: {

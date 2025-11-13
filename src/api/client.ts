@@ -1,6 +1,5 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { createClient } from '@supabase/supabase-js';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 const MOCK_MODE = import.meta.env.VITE_MOCK_MODE !== 'false';
@@ -53,9 +52,7 @@ apiClient.interceptors.response.use(
   }
 );
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Import the official supabase client instead of creating a duplicate
+export { supabase } from '@/integrations/supabase/client';
 
 export default apiClient;
