@@ -52,7 +52,19 @@ apiClient.interceptors.response.use(
   }
 );
 
-// Use the official auto-generated Supabase client
-export { supabase } from '@/integrations/supabase/client';
+// Create Supabase client with fallback values for preview environment
+// The publishable/anon key is safe to expose (it's meant to be public)
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://plvhelgpatpjwlnanvva.supabase.co';
+const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsdmhlbGdwYXRwandsbmFudnZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4MjY4MTksImV4cCI6MjA3NTQwMjgxOX0.9VEv9mnnYlBY0owvDY_seyTiQfprNCrxBxdiJOXVTNo';
+
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    storage: localStorage,
+    persistSession: true,
+    autoRefreshToken: true,
+  }
+});
 
 export default apiClient;
