@@ -264,15 +264,17 @@ export const automationApi = {
   async create(projectId: string, rule: Omit<AutomationRule, 'id'>, userId: string) {
     const { data, error } = await supabase
       .from('automation_rules')
-      .insert({
-        project_id: projectId,
-        name: rule.name,
-        trigger: rule.trigger,
-        conditions: rule.conditions,
-        actions: rule.actions,
-        enabled: rule.enabled,
-        created_by: userId,
-      })
+      .insert([
+        {
+          project_id: projectId,
+          name: rule.name,
+          trigger: rule.trigger,
+          conditions: rule.conditions as any,
+          actions: rule.actions as any,
+          enabled: rule.enabled,
+          created_by: userId,
+        }
+      ])
       .select()
       .single();
 
@@ -322,15 +324,20 @@ export const activitiesApi = {
   async create(activity: Omit<Activity, 'id' | 'createdAt'>) {
     const { error } = await supabase
       .from('activities')
-      .insert({
-        type: activity.type,
-        title: activity.title,
-        description: activity.description,
-        user_id: activity.user.id,
-        project_id: activity.projectId,
-        task_id: activity.taskId,
-        metadata: activity.metadata,
-      });
+      .insert([
+        {
+          action: activity.type,
+          entity_type: activity.taskId ? 'task' : 'project',
+          entity_id: activity.taskId ?? activity.projectId ?? activity.user.id,
+          user_id: activity.user.id,
+          type: activity.type,
+          title: activity.title,
+          description: activity.description,
+          project_id: activity.projectId,
+          task_id: activity.taskId,
+          metadata: activity.metadata,
+        }
+      ]);
 
     if (error) throw error;
   },
