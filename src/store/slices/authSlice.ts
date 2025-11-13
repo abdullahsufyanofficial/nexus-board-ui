@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { AuthState, User, LoginRequest, RegisterRequest } from '../../types';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/api/client';
 
 // Login user with Supabase
 export const loginUser = createAsyncThunk(

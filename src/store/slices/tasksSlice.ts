@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { Task } from '../../types';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/api/client';
 
 interface TasksState {
   tasks: Task[];
